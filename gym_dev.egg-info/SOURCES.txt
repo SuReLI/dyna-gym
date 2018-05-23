@@ -1,6 +1,0 @@
-README.md
-gym_dev.egg-info/PKG-INFO
-gym_dev.egg-info/SOURCES.txt
-gym_dev.egg-info/dependency_links.txt
-gym_dev.egg-info/requires.txt
-gym_dev.egg-info/top_level.txt
