@@ -31,6 +31,10 @@ class DynamicCartPole(gym.Env):
         self.theta_threshold_radians = 12 * 2 * math.pi / 360
         self.x_threshold = 2.4
 
+        # Dynamic parameters
+        self.alpha_max = math.pi / 4 # maximum inclination
+        self.alpha_period = 1.0 # inclination period
+
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
             self.x_threshold * 2,
@@ -60,18 +64,24 @@ class DynamicCartPole(gym.Env):
         return [seed]
 
     def transition(self, state, action):
-        x, x_dot, theta, theta_dot = state
+        x, x_dot, theta, theta_dot, time = state
+
+        alpha = self.alpha_max * math.sin(time * 6.28318530718 / self.alpha_period)
+        cosalpha = math.cos(alpha)
         force = self.force_mag if action==1 else -self.force_mag
+        force = force * cosalpha - self.gravity * math.sin(alpha)
+        gravity = self.gravity * cosalpha
+
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
         temp = (force + self.polemass_length * theta_dot * theta_dot * sintheta) / self.total_mass
-        thetaacc = (self.gravity * sintheta - costheta* temp) / (self.length * (4.0/3.0 - self.masspole * costheta * costheta / self.total_mass))
+        thetaacc = (gravity * sintheta - costheta* temp) / (self.length * (4.0/3.0 - self.masspole * costheta * costheta / self.total_mass))
         xacc  = temp - self.polemass_length * thetaacc * costheta / self.total_mass
         x  = x + self.tau * x_dot
         x_dot = x_dot + self.tau * xacc
         theta = theta + self.tau * theta_dot
         theta_dot = theta_dot + self.tau * thetaacc
-        state_p = (x,x_dot,theta,theta_dot)
+        state_p = (x,x_dot,theta,theta_dot,time+self.tau)
         done =  x < -self.x_threshold \
                 or x > self.x_threshold \
                 or theta < -self.theta_threshold_radians \
@@ -100,7 +110,7 @@ class DynamicCartPole(gym.Env):
     def step(self, action):
         '''
         Step function equivalent to transition and reward function.
-        Actually modifies the environment's state.
+        Actually modifies the environment's state attribute.
         Return (observation, reward, termination criterion (boolean), informations)
         '''
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
@@ -112,6 +122,7 @@ class DynamicCartPole(gym.Env):
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+        self.state = np.append(self.state,0.0) # time
         self.steps_beyond_done = None
         return np.array(self.state)
 
