@@ -25,7 +25,7 @@ class DynamicCartPole(gym.Env):
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
         self.force_mag = 10.0
-        self.nb_actions = 5 # number of discrete actions in [-force_mag,+force_mag]
+        self.nb_actions = 20 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
@@ -33,8 +33,8 @@ class DynamicCartPole(gym.Env):
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        self.alpha_max_radians = 0 * 2 * math.pi / 360 # maximum inclination
-        self.alpha_period = 1.0 # inclination period
+        self.alpha_max_radians = 70 * 2 * math.pi / 360 # maximum inclination
+        self.alpha_period = .2 # inclination period in seconds
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -56,9 +56,13 @@ class DynamicCartPole(gym.Env):
 
     def equality_operator(self, s1, s2):
         '''
-        Equality operator, return True if the two input states are equal
+        Equality operator, return True if the two input states are equal.
+        Only test the 4 first components (x, x_dot, theta, theta_dot)
         '''
-        return s1 == s2
+        for i in range(4):
+            if s1[i] != s2[i]:
+                return False
+        return True
 
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)

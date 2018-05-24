@@ -102,7 +102,7 @@ class UCT(object):
                         select = False
                     else: # Already has children
                         for i in range(len(node.children)):
-                            if env.equality_operator(node.children[i],state_p): # State already sampled
+                            if env.equality_operator(node.children[i].state,state_p): # State already sampled
                                 node = node.children[i]
                                 break
                             else: # New state sampled
