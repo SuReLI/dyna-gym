@@ -52,6 +52,7 @@ class DecisionNode:
 class ChanceNode:
     '''
     Chance node class, labelled by a state-action pair
+    The state is accessed via the parent attribute
     '''
     def __init__(self, parent, action):
         self.parent = parent
@@ -64,11 +65,12 @@ class UCT(object):
     '''
     UCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth):
+    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
+        self.is_model_dynamic = is_model_dynamic
 
     def act(self, env, done):
         '''
@@ -82,6 +84,7 @@ class UCT(object):
 
             # Selection
             select = True
+            expand_chance_node = False
             while select and (len(root.children) != 0):
                 if (type(node) == DecisionNode): # Decision node
                     if node.explored_children < len(node.children): # Go to unexplored chance node
@@ -91,41 +94,43 @@ class UCT(object):
                         select = False
                     else: # Go to chance node maximizing UCB
                         node = max(node.children, key=ucb)
-                else: # Chance Node (should have children TODO put it as condition in while)
-                    state_p, reward, terminal = env.transition(node.parent.state,node.action)
+                else: # Chance Node
+                    state_p, reward, terminal = env.transition(node.parent.state,node.action,self.is_model_dynamic)
                     rewards.append(reward)
-                    if (len(node.children) == 0): # No children
-                        node.children.append(DecisionNode(node,state_p))
-                        node = node.children[-1]
+                    if (len(node.children) == 0): # No child
+                        expand_chance_node = True
                         select = False
                     else: # Already has children
                         for i in range(len(node.children)):
                             if env.equality_operator(node.children[i],state_p): # State already sampled
                                 node = node.children[i]
                                 break
-                            else: # New state encountered
-                                node.children.append(DecisionNode(node,state_p))
-                                node = node.children[-1]
+                            else: # New state sampled
+                                expand_chance_node = True
                                 select = False
                                 break
 
             # Expansion
-            if not terminal and (type(node) == DecisionNode): # Expand a decision node
-                node.children = [ChanceNode(node, a) for a in combinations(env.action_space)]
-                random.shuffle(node.children)
-                child = node.children[0]
-                node.explored_children += 1
-                node = child
-
+            if expand_chance_node and (type(node) == ChanceNode): # Expand a chance node
+                node.children.append(DecisionNode(node,state_p))
+                node = node.children[-1]
+            if (type(node) == DecisionNode): # Expand a decision node
+                if terminal:
+                    node = node.parent
+                else:
+                    node.children = [ChanceNode(node, a) for a in combinations(env.action_space)]
+                    random.shuffle(node.children)
+                    child = node.children[0]
+                    node.explored_children += 1
+                    node = child
 
             # Evaluation
             t = 0
             estimate = 0
             state = node.parent.state
-            state = node.parent.state
             while not terminal:
                 action = env.action_space.sample() # default policy
-                state, reward, terminal = env.transition(state,action)
+                state, reward, terminal = env.transition(state,action,self.is_model_dynamic)
                 estimate += reward * (self.gamma**t)
                 t += 1
                 if node.depth + t > self.max_depth:
