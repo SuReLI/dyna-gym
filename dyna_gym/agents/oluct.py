@@ -44,11 +44,12 @@ class OLUCT(object):
     '''
     OLUCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth):
+    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
+        self.is_model_dynamic = is_model_dynamic
 
     def act(self, env, done):
         '''
@@ -56,10 +57,10 @@ class OLUCT(object):
         '''
         root = Node(None, None)
         for _ in range(self.rollouts):
-            envc = copy(env)
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node
             terminal = done
+            state = env.get_state()
 
             # Selection
             while len(node.children) != 0: # While node has children
@@ -69,20 +70,20 @@ class OLUCT(object):
                     node = child
                 else: # Go to UCB child
                     node = max(node.children, key=ucb)
-                __, reward, terminal, __ = envc.step(node.action)
+                state, reward, terminal = env.transition(state,node.action,self.is_model_dynamic)
                 rewards.append(reward)
 
             # Expansion
             if not terminal:
-                node.children = [Node(node, a) for a in combinations(envc.action_space)]
+                node.children = [Node(node, a) for a in combinations(env.action_space)]
                 random.shuffle(node.children)
 
             # Evaluation
             t = 0
             estimate = 0
             while not terminal:
-                action = envc.action_space.sample() # default policy
-                __, reward, terminal, __ = envc.step(action)
+                action = env.action_space.sample() # default policy
+                state, reward, terminal = env.transition(state,action,self.is_model_dynamic)
                 estimate += reward * (self.gamma**t)
                 t += 1
                 if node.depth + t > self.max_depth:

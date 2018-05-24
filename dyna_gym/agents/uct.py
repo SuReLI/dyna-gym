@@ -76,7 +76,7 @@ class UCT(object):
         '''
         Compute the entire UCT procedure
         '''
-        root = DecisionNode(None, env.get_state()) #here
+        root = DecisionNode(None, env.get_state())
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node

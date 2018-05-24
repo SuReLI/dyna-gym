@@ -4,7 +4,13 @@ import dyna_gym.agents.oluct as oluct
 
 env = gym.make('DynamicCartPole-v0')
 env.reset()
-agent = oluct.OLUCT(action_space=env.action_space, gamma=0.9, rollouts=100, max_depth=1000)
+agent = oluct.OLUCT(
+    action_space=env.action_space,
+    gamma=0.9,
+    rollouts=100,
+    max_depth=1000,
+    is_model_dynamic=True
+)
 
 timesteps = 100
 done = False
