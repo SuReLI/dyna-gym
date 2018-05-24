@@ -25,6 +25,7 @@ class DynamicCartPole(gym.Env):
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
         self.force_mag = 10.0
+        self.nb_actions = 5 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
@@ -32,7 +33,7 @@ class DynamicCartPole(gym.Env):
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        self.alpha_max = math.pi / 4 # maximum inclination
+        self.alpha_max_radians = 0 * 2 * math.pi / 360 # maximum inclination
         self.alpha_period = 1.0 # inclination period
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
@@ -42,7 +43,7 @@ class DynamicCartPole(gym.Env):
             self.theta_threshold_radians * 2,
             np.finfo(np.float32).max])
 
-        self.action_space = spaces.Discrete(2)
+        self.action_space = spaces.Discrete(self.nb_actions)
         self.observation_space = spaces.Box(-high, high)
 
         self._seed()
@@ -63,12 +64,18 @@ class DynamicCartPole(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def transition(self, state, action):
+    def transition(self, state, action, is_model_dynamic):
+        '''
+        Transition operator, return the resulting state, reward and a boolean indicating
+        whether the termination criterion is reached or not.
+        The boolean is_model_dynamic indicates whether the temporal transition is applied
+        to the state vector or not (increment of tau).
+        '''
         x, x_dot, theta, theta_dot, time = state
 
-        alpha = self.alpha_max * math.sin(time * 6.28318530718 / self.alpha_period)
+        alpha = self.alpha_max_radians * math.sin(time * 6.28318530718 / self.alpha_period)
         cosalpha = math.cos(alpha)
-        force = self.force_mag if action==1 else -self.force_mag
+        force = - self.force_mag + action * 2 * self.force_mag / (self.nb_actions - 1)
         force = force * cosalpha - self.gravity * math.sin(alpha)
         gravity = self.gravity * cosalpha
 
@@ -81,7 +88,9 @@ class DynamicCartPole(gym.Env):
         x_dot = x_dot + self.tau * xacc
         theta = theta + self.tau * theta_dot
         theta_dot = theta_dot + self.tau * thetaacc
-        state_p = (x,x_dot,theta,theta_dot,time+self.tau)
+        if is_model_dynamic:
+            time = time + self.tau
+        state_p = (x,x_dot,theta,theta_dot,time)
         done =  x < -self.x_threshold \
                 or x > self.x_threshold \
                 or theta < -self.theta_threshold_radians \
@@ -114,7 +123,7 @@ class DynamicCartPole(gym.Env):
         Return (observation, reward, termination criterion (boolean), informations)
         '''
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
-        self.state, reward, done = self.transition(self.state, action)
+        self.state, reward, done = self.transition(self.state, action, True)
         return np.array(self.state), reward, done, {}
 
     def print_state(self):
