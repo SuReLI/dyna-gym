@@ -1,6 +1,6 @@
 # Dyn Gym
 
-This is a pip package implementing Reinforcement Learning Algorithms in Dynamic environment supported by the <a href="https://gym.openai.com/">Open-ai GYM</a> toolkit.
+This is a pip package implementing Reinforcement Learning Algorithms in Dynamic environment supported by the <a href="https://gym.openai.com/">OpenAI Gym</a> toolkit.
 It contains both the dynamic environments i.e. whose transition and reward functions depend on the time and some algorithms implementations.
 
 # Environments
