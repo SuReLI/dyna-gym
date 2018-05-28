@@ -44,12 +44,11 @@ def inferred_value(node):
     '''
     Value estimate of a chance node wrt selected predictor
     No inference is performed in the three following cases:
-    - the node has depth 0;
     - the node has no history;
     - the history has too few data points.
     @TODO maybe consider inferring only with a higher number of data points
     '''
-    if node.depth > 0 and node.history and (len(node.history[2]) > 1):
+    if node.history and (len(node.history[2]) > 1):
         return poly_reg(node.history[2], 0)
     else:
         return snapshot_value(node)
@@ -92,9 +91,10 @@ class DecisionNode:
     '''
     Decision node class, labelled by a state
     '''
-    def __init__(self, parent, state):
+    def __init__(self, parent, state, is_terminal):
         self.parent = parent
         self.state = state
+        self.is_terminal = is_terminal
         if self.parent is None: # Root node
             self.depth = 0
         else: # Non root node
@@ -133,11 +133,17 @@ class IQUCT(object):
 
         self.histories = [] # saved histories
 
+    def reset(self):
+        '''
+        Reset Agent's attributes.
+        '''
+        self.histories = [] # saved histories
+
     def act(self, env, done):
         '''
         Compute the entire UCT procedure
         '''
-        root = DecisionNode(None, env.get_state())
+        root = DecisionNode(None, env.get_state(), done)
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node
@@ -148,13 +154,17 @@ class IQUCT(object):
             expand_chance_node = False
             while select and (len(root.children) != 0):
                 if (type(node) == DecisionNode): # Decision node
-                    if node.explored_children < len(node.children): # Go to unexplored chance node
-                        child = node.children[node.explored_children]
-                        node.explored_children += 1
-                        node = child
+                    if node.is_terminal: # Terminal, evaluate parent
+                        node = node.parent
                         select = False
-                    else: # Go to chance node maximizing UCB
-                        node = max(node.children, key=inferred_value)
+                    else: # Decision node is not terminal
+                        if node.explored_children < len(node.children): # Go to unexplored chance node
+                            child = node.children[node.explored_children]
+                            node.explored_children += 1
+                            node = child
+                            select = False
+                        else: # Go to chance node maximizing UCB
+                            node = max(node.children, key=inferred_value)
                 else: # Chance Node
                     state_p, reward, terminal = env.transition(node.parent.state,node.action,self.is_model_dynamic)
                     rewards.append(reward)
@@ -173,7 +183,7 @@ class IQUCT(object):
 
             # Expansion
             if expand_chance_node and (type(node) == ChanceNode): # Expand a chance node
-                node.children.append(DecisionNode(node,state_p))
+                node.children.append(DecisionNode(node,state_p,terminal))
                 node = node.children[-1]
             if (type(node) == DecisionNode): # Expand a decision node
                 if terminal:

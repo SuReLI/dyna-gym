@@ -6,5 +6,11 @@ class MyRandomAgent(object):
     def __init__(self, action_space):
         self.action_space = action_space
 
+    def reset(self):
+        '''
+        Reset Agent's attributes.
+        Nothing to reset.
+        '''
+
     def act(self, observation, reward, done):
         return self.action_space.sample()

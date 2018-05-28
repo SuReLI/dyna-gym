@@ -7,14 +7,15 @@ It contains both the dynamic environments i.e. whose transition and reward funct
 
 The implemented environments are the following and can be found at dyna-gym/dyna_gym/envs
 - Dynamic cart pole: a classic cart pole environment with a time-varying direction of the gravitational force;
-- TODO
+- TODO implement more environments
 
 # Algorithms
 
 The implemented algorithms are the following and can be found at dyna-gym/dyna_gym/agents
-- Random;
+- Random action selection;
 - <a href="http://ggp.stanford.edu/readings/uct.pdf">UCT algorithm</a>;
 - <a href="https://arxiv.org/abs/1805.01367">OLUCT algorithm</a>;
+- IQUCT (Infered Q-values UCT) algorithm.
 
 # Installation
 

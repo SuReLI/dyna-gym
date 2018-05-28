@@ -51,6 +51,12 @@ class OLUCT(object):
         self.max_depth = max_depth
         self.is_model_dynamic = is_model_dynamic
 
+    def reset(self):
+        '''
+        Reset Agent's attributes.
+        Nothing to reset.
+        '''
+
     def act(self, env, done):
         '''
         Compute the entire OLUCT procedure
