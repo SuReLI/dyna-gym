@@ -1,5 +1,7 @@
 """
 Cart-pole system with a dynamic reward function
+The objective is to follow a point whose position is varying with time.
+The position is a sin function centered in x=0
 """
 
 import logging
@@ -33,7 +35,8 @@ class CartPoleDynamicReward(gym.Env):
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        #TODO
+        self.center_threshold = 1 # maximum distance to position zero
+        self.center_period = 10 # oscillation period in seconds
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -94,11 +97,12 @@ class CartPoleDynamicReward(gym.Env):
                 or theta > self.theta_threshold_radians
         done = bool(done)
 
-        #TODO
         if not done:
             reward = 1.0
         else:
             reward = 0.0
+        center = self.center_threshold * math.sin(time * 6.28318530718 / self.center_period)
+        reward = reward * abs(center - x)
         '''
         elif self.steps_beyond_done is None:
             # Pole just fell!
