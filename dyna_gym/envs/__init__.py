@@ -1,1 +1,1 @@
-from dyna_gym.envs.dynamic_cartpole_env import DynamicCartPole
+from dyna_gym.envs.cartpole_dynamic_transition import CartPoleDynamicTransition

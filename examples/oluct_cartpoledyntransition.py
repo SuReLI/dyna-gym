@@ -1,10 +1,10 @@
 import gym
-import dyna_gym.envs.dynamic_cartpole_env
-import dyna_gym.agents.uct as uct
+import dyna_gym.envs.cartpole_dynamic_transition
+import dyna_gym.agents.oluct as oluct
 
 ### Parameters
-env = gym.make('DynamicCartPole-v0')
-agent = uct.UCT(
+env = gym.make('CartPoleDynamicTransition-v0')
+agent = oluct.OLUCT(
     action_space=env.action_space,
     gamma=0.9,
     rollouts=100,
@@ -12,7 +12,7 @@ agent = uct.UCT(
     is_model_dynamic=True
 )
 timesteps = 100
-verbose = True
+verbose = False
 
 ### Run
 env.reset()
@@ -21,7 +21,7 @@ for ts in range(timesteps):
     __, __, done, __ = env.step(agent.act(env,done))
     if verbose:
         env.print_state()
-
+    env.render()
     # Termination
     if ts+1 == timesteps:
         if verbose:

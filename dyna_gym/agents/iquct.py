@@ -43,15 +43,19 @@ def snapshot_value(node):
 def inferred_value(node):
     '''
     Value estimate of a chance node wrt selected predictor
-    No inference is performed in the three following cases:
-    - the node has no history;
-    - the history has too few data points.
+    No inference is performed if the history is empty or has too few data points.
     @TODO maybe consider inferring only with a higher number of data points
     '''
-    if node.history and (len(node.history[2]) > 1):
-        return poly_reg(node.history[2], 0)
+    if(len(node.history) > 1):
+        return poly_reg(node.history, 0)
     else:
         return snapshot_value(node)
+
+def ucb(node):
+    '''
+    Upper Confidence Bound of a chance node
+    '''
+    return inferred_value(node) + 0.7 * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
 def combinations(space):
     if isinstance(space, gym.spaces.Discrete):
@@ -65,7 +69,7 @@ def update_histories(histories, node, env):
     '''
     Update the collected histories.
     Recursive method.
-    @TODO discard the elements once their duration is 0
+    @TODO discard the elements once their duration is zero?
     '''
     for child in node.children:
         if child.sampled_returns: # Ensure there are sampled returns
@@ -78,14 +82,58 @@ def update_histories(histories, node, env):
                     match = True
                     break
             if not match: # No match occured, add a new history
-                    histories.append([
-                        child.parent.state,
-                        child.action,
-                        [[snapshot_value(child),duration]]
-                    ])
+                histories.append([
+                    child.parent.state,
+                    child.action,
+                    [[snapshot_value(child),duration]]
+                ])
             # Recursive call
             for grandchild in child.children:
-                update_histories(histories,grandchild,env)
+                update_histories(histories, grandchild, env)
+
+def print_state(prefix, s): #TRM
+    if s is None:
+        print('None')
+    else:
+        print('{}x: {:.6f}; xd: {:.6f}; t: {:.6f}; td: {:.6f}'.format(prefix,s[0],s[1],s[2],s[3]))
+
+def print_tree(node, prev_root, env):#TRM
+    assert(type(node) == DecisionNode)
+    print('print tree--------------start')
+
+    print('ROOT:')
+    print_state('',node.state)
+    '''
+    if prev_root is not None:
+        print('Prev root grandchild:')
+        for pvchild in prev_root.children:
+            for pvgrandchild in pvchild.children:
+                print_state(pvgrandchild.state)
+                answ = env.equality_operator(pvgrandchild.state,node.state)
+                print(' -> is equal to new root: {}'.format(answ))
+    '''
+
+    print('  CHILDREN:')
+    for child in node.children:
+        print('  a = {}'.format(child.action))
+        print_state('  ',child.parent.state)
+
+    print('    GRANDx2 CHILDREN:')
+    for child in node.children:
+        for gchild in child.children:
+            for ggchild in gchild.children:
+                print('    a = {}'.format(ggchild.action))
+                print_state('    ',ggchild.parent.state)
+
+    print('      GRANDx4 CHILDREN:')
+    for child in node.children:
+        for gchild in child.children:
+            for ggchild in gchild.children:
+                for gggchild in ggchild.children:
+                    for ggggchild in gggchild.children:
+                        print('      a = {}'.format(ggggchild.action))
+                        print_state('      ',ggggchild.parent.state)
+    print('--------------------------end')
 
 class DecisionNode:
     '''
@@ -118,7 +166,7 @@ class ChanceNode:
         self.history = []
         for h in histories:
             if (h[1] == self.action) and env.equality_operator(h[0],self.parent.state):
-                self.history = h
+                self.history = copy(h[2])
 
 class IQUCT(object):
     '''
@@ -130,7 +178,6 @@ class IQUCT(object):
         self.rollouts = rollouts
         self.max_depth = max_depth
         self.is_model_dynamic = is_model_dynamic
-
         self.histories = [] # saved histories
 
     def reset(self):
@@ -163,8 +210,8 @@ class IQUCT(object):
                             node.explored_children += 1
                             node = child
                             select = False
-                        else: # Go to chance node maximizing UCB
-                            node = max(node.children, key=inferred_value)
+                        else: # Go to chance node maximizing UCB using inferred values
+                            node = max(node.children, key=ucb)
                 else: # Chance Node
                     state_p, reward, terminal = env.transition(node.parent.state,node.action,self.is_model_dynamic)
                     rewards.append(reward)
@@ -201,8 +248,8 @@ class IQUCT(object):
             state = node.parent.state
             while not terminal:
                 action = env.action_space.sample() # default policy
-                state, reward, terminal = env.transition(state,action,self.is_model_dynamic)
-                estimate += reward * (self.gamma**t)
+                #state, reward, terminal = env.transition(state,action,self.is_model_dynamic)#TODO put back
+                #estimate += reward * (self.gamma**t)#TODO put back
                 t += 1
                 if node.depth + t > self.max_depth:
                     break
