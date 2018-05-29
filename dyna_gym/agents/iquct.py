@@ -91,50 +91,6 @@ def update_histories(histories, node, env):
             for grandchild in child.children:
                 update_histories(histories, grandchild, env)
 
-def print_state(prefix, s): #TRM
-    if s is None:
-        print('None')
-    else:
-        print('{}x: {:.6f}; xd: {:.6f}; t: {:.6f}; td: {:.6f}'.format(prefix,s[0],s[1],s[2],s[3]))
-
-def print_tree(node, prev_root, env):#TRM
-    assert(type(node) == DecisionNode)
-    print('print tree--------------start')
-
-    print('ROOT:')
-    print_state('',node.state)
-    '''
-    if prev_root is not None:
-        print('Prev root grandchild:')
-        for pvchild in prev_root.children:
-            for pvgrandchild in pvchild.children:
-                print_state(pvgrandchild.state)
-                answ = env.equality_operator(pvgrandchild.state,node.state)
-                print(' -> is equal to new root: {}'.format(answ))
-    '''
-
-    print('  CHILDREN:')
-    for child in node.children:
-        print('  a = {}'.format(child.action))
-        print_state('  ',child.parent.state)
-
-    print('    GRANDx2 CHILDREN:')
-    for child in node.children:
-        for gchild in child.children:
-            for ggchild in gchild.children:
-                print('    a = {}'.format(ggchild.action))
-                print_state('    ',ggchild.parent.state)
-
-    print('      GRANDx4 CHILDREN:')
-    for child in node.children:
-        for gchild in child.children:
-            for ggchild in gchild.children:
-                for gggchild in ggchild.children:
-                    for ggggchild in gggchild.children:
-                        print('      a = {}'.format(ggggchild.action))
-                        print_state('      ',ggggchild.parent.state)
-    print('--------------------------end')
-
 class DecisionNode:
     '''
     Decision node class, labelled by a state

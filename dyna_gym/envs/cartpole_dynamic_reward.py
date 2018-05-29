@@ -27,7 +27,7 @@ class CartPoleDynamicReward(gym.Env):
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
         self.force_mag = 10.0
-        self.nb_actions = 2 # number of discrete actions in [-force_mag,+force_mag]
+        self.nb_actions = 10 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
@@ -35,8 +35,8 @@ class CartPoleDynamicReward(gym.Env):
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        self.center_threshold = 1 # maximum distance to position zero
-        self.center_period = 10 # oscillation period in seconds
+        self.center_threshold = 0.5 # maximum distance to position zero
+        self.center_period = 20 # oscillation period in seconds
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -82,7 +82,7 @@ class CartPoleDynamicReward(gym.Env):
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
         temp = (force + self.polemass_length * theta_dot * theta_dot * sintheta) / self.total_mass
-        thetaacc = (gravity * sintheta - costheta* temp) / (self.length * (4.0/3.0 - self.masspole * costheta * costheta / self.total_mass))
+        thetaacc = (self.gravity * sintheta - costheta* temp) / (self.length * (4.0/3.0 - self.masspole * costheta * costheta / self.total_mass))
         xacc  = temp - self.polemass_length * thetaacc * costheta / self.total_mass
         x  = x + self.tau * x_dot
         x_dot = x_dot + self.tau * xacc
