@@ -35,8 +35,9 @@ class CartPoleDynamicReward(gym.Env):
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        self.center_threshold = 0.5 # maximum distance to position zero
-        self.center_period = 20 # oscillation period in seconds
+        self.center = 0 # Goal position
+        self.center_threshold = 0.5 # Maximum distance to x=0
+        self.center_period = 20 # Oscillation period in seconds
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -101,8 +102,8 @@ class CartPoleDynamicReward(gym.Env):
             reward = 1.0
         else:
             reward = 0.0
-        center = self.center_threshold * math.sin(time * 6.28318530718 / self.center_period)
-        reward = reward * abs(center - x)
+        self.center = self.center_threshold * math.sin(time * 6.28318530718 / self.center_period)
+        reward = reward * abs(self.center - x)
         '''
         elif self.steps_beyond_done is None:
             # Pole just fell!
@@ -171,11 +172,19 @@ class CartPoleDynamicReward(gym.Env):
             pole.add_attr(self.poletrans)
             pole.add_attr(self.carttrans)
             self.viewer.add_geom(pole)
+
             self.axle = rendering.make_circle(polewidth/2)
             self.axle.add_attr(self.poletrans)
             self.axle.add_attr(self.carttrans)
             self.axle.set_color(.5,.5,.8)
             self.viewer.add_geom(self.axle)
+
+            self.goaltrans = rendering.Transform()
+            self.goal = rendering.make_circle(polewidth/2)
+            self.goal.add_attr(self.goaltrans)
+            self.goal.set_color(1,0,0)
+            self.viewer.add_geom(self.goal)
+
             self.track = rendering.Line((0,carty), (screen_width,carty))
             self.track.set_color(0,0,0)
             self.viewer.add_geom(self.track)
@@ -184,7 +193,9 @@ class CartPoleDynamicReward(gym.Env):
 
         x = self.state
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
+        goalx = self.center*scale+screen_width/2.0
         self.carttrans.set_translation(cartx, carty)
+        self.goaltrans.set_translation(goalx, carty)
         self.poletrans.set_rotation(-x[2])
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
