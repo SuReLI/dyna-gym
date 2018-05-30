@@ -3,23 +3,25 @@ import dyna_gym.envs.cartpole_dynamic_transition
 import dyna_gym.agents.uct as uct
 
 ### Parameters
-env = gym.make('CartPoleDynamicTransition-v0')
+env = gym.make('CartPoleDynamicReward-v1')
 agent = uct.UCT(
     action_space=env.action_space,
     gamma=0.9,
-    rollouts=100,
+    rollouts=200,
     max_depth=1000,
     is_model_dynamic=True,
     ucb_constant=0.707
 )
-timesteps = 100
-verbose = False
+timesteps = 1000
+verbose = True
 
 ### Run
 env.reset()
 done = False
+cumulative_reward = 0
 for ts in range(timesteps):
-    __, __, done, __ = env.step(agent.act(env,done))
+    __, reward, done, __ = env.step(agent.act(env,done))
+    cumulative_reward += reward
     if verbose:
         env.print_state()
     env.render()
@@ -31,3 +33,5 @@ for ts in range(timesteps):
         if verbose:
             print("Episode finished after {} timesteps".format(ts+1))
         break
+if verbose:
+    print('Cummulative reward: {}'.format(cumulative_reward))

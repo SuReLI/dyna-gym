@@ -20,12 +20,6 @@ def chance_node_value(node):
     '''
     return sum(node.sampled_returns) / len(node.sampled_returns)
 
-def ucb(node):
-    '''
-    Upper Confidence Bound of a chance node
-    '''
-    return chance_node_value(node) + 0.707 * sqrt(log(node.parent.visits)/len(node.sampled_returns))
-
 def combinations(space):
     if isinstance(space, gym.spaces.Discrete):
         return range(space.n)
@@ -66,18 +60,25 @@ class UCT(object):
     '''
     UCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic):
+    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic, ucb_constant):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
         self.is_model_dynamic = is_model_dynamic
+        self.ucb_constant = ucb_constant
 
     def reset(self):
         '''
         Reset Agent's attributes.
         Nothing to reset.
         '''
+
+    def ucb(self, node):
+        '''
+        Upper Confidence Bound of a chance node
+        '''
+        return chance_node_value(node) + self.ucb_constant * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
     def act(self, env, done):
         '''
@@ -104,7 +105,7 @@ class UCT(object):
                             node = child
                             select = False
                         else: # Go to chance node maximizing UCB
-                            node = max(node.children, key=ucb)
+                            node = max(node.children, key=self.ucb)
                 else: # Chance Node
                     state_p, reward, terminal = env.transition(node.parent.state,node.action,self.is_model_dynamic)
                     rewards.append(reward)

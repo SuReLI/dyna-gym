@@ -14,12 +14,6 @@ def value(node):
     '''
     return sum(node.sampled_returns) / len(node.sampled_returns)
 
-def ucb(node):
-    '''
-    Upper Confidence Bound
-    '''
-    return value(node) + sqrt(log(len(node.parent.sampled_returns))/len(node.sampled_returns))
-
 def combinations(space):
     if isinstance(space, gym.spaces.Discrete):
         return range(space.n)
@@ -44,18 +38,25 @@ class OLUCT(object):
     '''
     OLUCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic):
+    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic, ucb_constant):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
         self.is_model_dynamic = is_model_dynamic
+        self.ucb_constant = ucb_constant
 
     def reset(self):
         '''
         Reset Agent's attributes.
         Nothing to reset.
         '''
+
+    def ucb(self, node):
+        '''
+        Upper Confidence Bound
+        '''
+        return value(node) + self.ucb_constant * sqrt(log(len(node.parent.sampled_returns))/len(node.sampled_returns))
 
     def act(self, env, done):
         '''
@@ -75,7 +76,7 @@ class OLUCT(object):
                     node.explored_children += 1
                     node = child
                 else: # Go to UCB child
-                    node = max(node.children, key=ucb)
+                    node = max(node.children, key=self.ucb)
                 state, reward, terminal = env.transition(state,node.action,self.is_model_dynamic)
                 rewards.append(reward)
 

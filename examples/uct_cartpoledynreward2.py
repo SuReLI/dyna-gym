@@ -9,7 +9,8 @@ agent = uct.UCT(
     gamma=0.9,
     rollouts=200,
     max_depth=1000,
-    is_model_dynamic=True
+    is_model_dynamic=True,
+    ucb_constant=0.707
 )
 timesteps = 1000
 verbose = True
