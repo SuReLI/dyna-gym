@@ -7,7 +7,7 @@ It contains both the dynamic environments i.e. whose transition and reward funct
 
 The implemented environments are the following and can be found at dyna-gym/dyna_gym/envs
 - Cart pole with dynamic transition function: a cart pole environment with a time-varying direction of the gravitational force;
-- Cart pole with dynamic reward function: a cart pole environment with a more difficult objective: to balance the pole and to follow a time-varying position.
+- Cart pole with dynamic reward function: a cart pole environment with a more difficult objective: to balance the pole and to keep the position of the cart along the x-axis within a time-varying interval.
 
 # Algorithms
 

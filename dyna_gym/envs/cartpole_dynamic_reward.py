@@ -1,7 +1,7 @@
 """
-Cart-pole system with a dynamic reward function
-The objective is to follow a point whose position is varying with time.
-The position is a sin function centered in x=0
+Cart-pole system with a dynamic reward function.
+The objective is to balance the pole + to keep the position of the cart along the x-axis
+within a time-varying interval.
 """
 
 import logging
@@ -38,6 +38,7 @@ class CartPoleDynamicReward(gym.Env):
         self.center = 0 # Goal position
         self.center_threshold = 0.5 # Maximum distance to x=0
         self.center_period = 20 # Oscillation period in seconds
+        self.tol = 0.2 # Maximum allowed distance to center
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -92,8 +93,10 @@ class CartPoleDynamicReward(gym.Env):
         if is_model_dynamic:
             time = time + self.tau
         state_p = (x,x_dot,theta,theta_dot,time)
-        done =  x < -self.x_threshold \
-                or x > self.x_threshold \
+        # Termination criterion
+        self.center = self.center_threshold * math.sin(time * 6.28318530718 / self.center_period)
+        done =  x < self.center - self.tol \
+                or x > self.center + self.tol \
                 or theta < -self.theta_threshold_radians \
                 or theta > self.theta_threshold_radians
         done = bool(done)
@@ -102,8 +105,6 @@ class CartPoleDynamicReward(gym.Env):
             reward = 1.0
         else:
             reward = 0.0
-        self.center = self.center_threshold * math.sin(time * 6.28318530718 / self.center_period)
-        reward = reward * (1 - abs(self.center - x) / self.x_threshold)
         '''
         elif self.steps_beyond_done is None:
             # Pole just fell!
@@ -145,8 +146,8 @@ class CartPoleDynamicReward(gym.Env):
                 self.viewer = None
             return
 
-        screen_width = 600
-        screen_height = 400
+        screen_width = 900
+        screen_height = 600
 
         world_width = self.x_threshold*2
         scale = screen_width/world_width
@@ -179,11 +180,17 @@ class CartPoleDynamicReward(gym.Env):
             self.axle.set_color(.5,.5,.8)
             self.viewer.add_geom(self.axle)
 
-            self.goaltrans = rendering.Transform()
-            self.goal = rendering.make_circle(polewidth/2)
-            self.goal.add_attr(self.goaltrans)
-            self.goal.set_color(1,0,0)
-            self.viewer.add_geom(self.goal)
+            self.limptrans = rendering.Transform()
+            limp = rendering.make_circle(polewidth/2)
+            limp.add_attr(self.limptrans)
+            limp.set_color(1,0,0)
+            self.viewer.add_geom(limp)
+
+            self.limmtrans = rendering.Transform()
+            limm = rendering.make_circle(polewidth/2)
+            limm.add_attr(self.limmtrans)
+            limm.set_color(1,0,0)
+            self.viewer.add_geom(limm)
 
             self.track = rendering.Line((0,carty), (screen_width,carty))
             self.track.set_color(0,0,0)
@@ -193,9 +200,11 @@ class CartPoleDynamicReward(gym.Env):
 
         x = self.state
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
-        goalx = self.center*scale+screen_width/2.0
+        limmx = (self.center-self.tol)*scale+screen_width/2.0
+        limpx = (self.center+self.tol)*scale+screen_width/2.0
         self.carttrans.set_translation(cartx, carty)
-        self.goaltrans.set_translation(goalx, carty)
+        self.limmtrans.set_translation(limmx, carty)
+        self.limptrans.set_translation(limpx, carty)
         self.poletrans.set_rotation(-x[2])
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')

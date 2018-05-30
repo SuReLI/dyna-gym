@@ -24,7 +24,7 @@ def ucb(node):
     '''
     Upper Confidence Bound of a chance node
     '''
-    return chance_node_value(node) + sqrt(log(node.parent.visits)/len(node.sampled_returns))
+    return chance_node_value(node) + 0.707 * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
 def combinations(space):
     if isinstance(space, gym.spaces.Discrete):
