@@ -10,52 +10,11 @@ from math import sqrt, log
 from copy import copy
 from sklearn.linear_model import Ridge
 
-def poly_feature(x, deg):
-    result = np.array([],float)
-    for i in range(deg+1):
-        result = np.append(result, [x**i])
-    return result
-
-def poly_reg(data, x):
-    '''
-    Perform Linear Regression with Polynomial features and returns the predictor.
-    Data should have the form [[x,y], ...].
-    Return the prediction at the value specified by x
-    '''
-    reg = 1 # Regularization
-    deg = 1 # Degree of the polynomial
-    X = []
-    y = []
-    for d in data:
-        X = np.append(X, poly_feature(d[0], deg))
-        y = np.append(y, d[1])
-    X = X.reshape((len(data), deg+1))
-    clf = Ridge(alpha=reg)
-    clf.fit(X, y)
-    return clf.predict(poly_feature(x, deg).reshape(1,-1))
-
 def snapshot_value(node):
     '''
     Value estimate of a chance node wrt current snapshot model of the MDP
     '''
     return sum(node.sampled_returns) / len(node.sampled_returns)
-
-def inferred_value(node):
-    '''
-    Value estimate of a chance node wrt selected predictor
-    No inference is performed if the history is empty or has too few data points.
-    @TODO maybe consider inferring only with a higher number of data points
-    '''
-    if(len(node.history) > 1):
-        return poly_reg(node.history, 0)
-    else:
-        return snapshot_value(node)
-
-def ucb(node):
-    '''
-    Upper Confidence Bound of a chance node
-    '''
-    return inferred_value(node) + 0.7 * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
 def combinations(space):
     if isinstance(space, gym.spaces.Discrete):
@@ -128,19 +87,63 @@ class IQUCT(object):
     '''
     IQUCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic):
+    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, regularization, degree):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
-        self.is_model_dynamic = is_model_dynamic
+        self.is_model_dynamic = False # default
         self.histories = [] # saved histories
+        self.ucb_constant = ucb_constant
+
+        # Regression parameters
+        self.reg = regularization
+        self.deg = degree
 
     def reset(self):
         '''
         Reset Agent's attributes.
         '''
         self.histories = [] # saved histories
+
+    def poly_feature(self, x):
+        result = np.array([],float)
+        for i in range(self.deg+1):
+            result = np.append(result, [x**i])
+        return result
+
+    def poly_reg(self, data, x):
+        '''
+        Perform Linear Regression with Polynomial features and returns the predictor.
+        Data should have the form [[x,y], ...].
+        Return the prediction at the value specified by x
+        '''
+        X = []
+        y = []
+        for d in data:
+            X = np.append(X, self.poly_feature(d[0]))
+            y = np.append(y, d[1])
+        X = X.reshape((len(data), self.deg+1))
+        clf = Ridge(alpha=self.reg)
+        clf.fit(X, y)
+        return clf.predict(self.poly_feature(x).reshape(1,-1))
+
+    def inferred_value(self, node):
+        '''
+        Value estimate of a chance node wrt selected predictor
+        No inference is performed if the history is empty or has too few data points.
+        @TODO maybe consider inferring only with a higher number of data points
+        '''
+        if(len(node.history) > 1):
+            return self.poly_reg(node.history, 0)
+        else:
+            return snapshot_value(node)
+
+    def ucb(self, node):
+        '''
+        Upper Confidence Bound of a chance node
+        '''
+        return self.inferred_value(node) + self.ucb_constant * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
     def act(self, env, done):
         '''
@@ -167,7 +170,7 @@ class IQUCT(object):
                             node = child
                             select = False
                         else: # Go to chance node maximizing UCB using inferred values
-                            node = max(node.children, key=ucb)
+                            node = max(node.children, key=self.ucb)
                 else: # Chance Node
                     state_p, reward, terminal = env.transition(node.parent.state,node.action,self.is_model_dynamic)
                     rewards.append(reward)
@@ -218,4 +221,4 @@ class IQUCT(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         update_histories(self.histories, root, env)
-        return max(root.children, key=inferred_value).action
+        return max(root.children, key=self.inferred_value).action

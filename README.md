@@ -5,7 +5,7 @@ It contains both the dynamic environments i.e. whose transition and reward funct
 
 # Environments
 
-The implemented environments are the following and can be found at dyna-gym/dyna_gym/envs.
+The implemented environments are the following and can be found at <i>dyna-gym/dyna_gym/envs</i>.
 For each environment, the id given as argument to the gym.make function is writen in bold.
 - <b>CartPoleDynamicTransition-v0</b>. A cart pole environment with a time-varying direction of the gravitational force;
 - <b>CartPoleDynamicReward-v1</b>. A cart pole environment with a double objective: to balance the pole and to keep the position of the cart along the x-axis within a time-varying interval;
@@ -13,7 +13,7 @@ For each environment, the id given as argument to the gym.make function is write
 
 # Algorithms
 
-The implemented algorithms are the following and can be found at dyna-gym/dyna_gym/agents
+The implemented algorithms are the following and can be found at <i>dyna-gym/dyna_gym/agents</i>.
 - Random action selection;
 - <a href="http://ggp.stanford.edu/readings/uct.pdf">UCT algorithm</a>;
 - <a href="https://arxiv.org/abs/1805.01367">OLUCT algorithm</a>;
@@ -28,6 +28,6 @@ cd dyna-gym
 pip install -e .
 ```
 
-Examples are provided in the example/ repository. You can run them using your
+Examples are provided in the <i>example/</i> repository. You can run them using your
 installed version of Python.
 

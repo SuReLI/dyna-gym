@@ -7,9 +7,11 @@ env = gym.make('CartPoleDynamicTransition-v0')
 agent = iquct.IQUCT(
     action_space=env.action_space,
     gamma=0.9,
-    rollouts=14,
+    rollouts=100,
     max_depth=1000,
-    is_model_dynamic=False
+    ucb_constant=0.7,
+    regularization=1,
+    degree=1
 )
 timesteps = 100
 verbose = False
