@@ -12,7 +12,7 @@ def decision_node_value(node):
     '''
     Value of a decision node
     '''
-    return chance_node_value(max(node.children, key=chance_node_value)) #TODO can be improved
+    return chance_node_value(max(node.children, key=chance_node_value))
 
 def chance_node_value(node):
     '''

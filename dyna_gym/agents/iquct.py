@@ -204,8 +204,8 @@ class IQUCT(object):
             state = node.parent.state
             while not terminal:
                 action = env.action_space.sample() # default policy
-                #state, reward, terminal = env.transition(state,action,self.is_model_dynamic)#TODO put back
-                #estimate += reward * (self.gamma**t)#TODO put back
+                state, reward, terminal = env.transition(state,action,self.is_model_dynamic)
+                estimate += reward * (self.gamma**t)
                 t += 1
                 if node.depth + t > self.max_depth:
                     break

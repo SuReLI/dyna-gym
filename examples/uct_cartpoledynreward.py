@@ -17,8 +17,10 @@ verbose = True
 ### Run
 env.reset()
 done = False
+cumulative_reward = 0
 for ts in range(timesteps):
-    __, __, done, __ = env.step(agent.act(env,done))
+    __, reward, done, __ = env.step(agent.act(env,done))
+    cumulative_reward += reward
     if verbose:
         env.print_state()
     env.render()
@@ -30,3 +32,5 @@ for ts in range(timesteps):
         if verbose:
             print("Episode finished after {} timesteps".format(ts+1))
         break
+if verbose:
+    print('Cummulative reward: {}'.format(cumulative_reward))
