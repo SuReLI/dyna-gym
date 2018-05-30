@@ -6,6 +6,11 @@ register(
 )
 
 register(
-    id='CartPoleDynamicReward-v0',
-    entry_point='dyna_gym.envs:CartPoleDynamicReward',
+    id='CartPoleDynamicReward-v1',
+    entry_point='dyna_gym.envs:CartPoleDynamicRewardV1',
+)
+
+register(
+    id='CartPoleDynamicReward-v2',
+    entry_point='dyna_gym.envs:CartPoleDynamicRewardV2',
 )
