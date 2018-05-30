@@ -77,10 +77,10 @@ class CartPoleDynamicTransition(gym.Env):
         '''
         x, x_dot, theta, theta_dot, time = state
 
-        alpha = self.alpha_max_radians * math.sin(time * 6.28318530718 / self.alpha_period)
-        cosalpha = math.cos(alpha)
+        self.alpha = self.alpha_max_radians * math.sin(time * 6.28318530718 / self.alpha_period)
+        cosalpha = math.cos(self.alpha)
         force = - self.force_mag + action * 2 * self.force_mag / (self.nb_actions - 1)
-        force = force * cosalpha - self.gravity * math.sin(alpha)
+        force = force * cosalpha - self.gravity * math.sin(self.alpha)
         gravity = self.gravity * cosalpha
 
         costheta = math.cos(theta)
@@ -166,6 +166,7 @@ class CartPoleDynamicTransition(gym.Env):
             self.carttrans = rendering.Transform()
             cart.add_attr(self.carttrans)
             self.viewer.add_geom(cart)
+
             l,r,t,b = -polewidth/2,polewidth/2,polelen-polewidth/2,-polewidth/2
             pole = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
             pole.set_color(.8,.6,.4)
@@ -173,10 +174,19 @@ class CartPoleDynamicTransition(gym.Env):
             pole.add_attr(self.poletrans)
             pole.add_attr(self.carttrans)
             self.viewer.add_geom(pole)
+
+            l,r,t,b = -1,1,10,-10
+            vect = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
+            vect.set_color(1,0,0)
+            self.vecttrans = rendering.Transform(translation=(0.05*screen_width, 0.95*screen_height))
+            vect.add_attr(self.vecttrans)
+            self.viewer.add_geom(vect)
+
             self.axle = rendering.make_circle(polewidth/2)
             self.axle.add_attr(self.poletrans)
             self.axle.add_attr(self.carttrans)
             self.axle.set_color(.5,.5,.8)
+
             self.viewer.add_geom(self.axle)
             self.track = rendering.Line((0,carty), (screen_width,carty))
             self.track.set_color(0,0,0)
@@ -188,5 +198,6 @@ class CartPoleDynamicTransition(gym.Env):
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
         self.carttrans.set_translation(cartx, carty)
         self.poletrans.set_rotation(-x[2])
+        self.vecttrans.set_rotation(-self.alpha)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
