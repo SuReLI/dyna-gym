@@ -11,6 +11,8 @@ For each environment, the id given as argument to the gym.make function is write
 - <b>CartPoleDynamicTransition-v0</b>. A cart pole environment with a time-varying direction of the gravitational force;
 <p align="center">
 	<img height="250" width="auto" src="img/cartpole_nstransition.gif">
+</p>
+<p align="center">
 	Cart pole in the <b>CartPoleDynamicTransition-v0</b> environment. The red bar indicates the direction of the gravitational force
 </p>
 
