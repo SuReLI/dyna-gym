@@ -26,7 +26,7 @@ class CartPoleDynamicRewardV2(gym.Env):
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
         self.force_mag = 10.0
-        self.nb_actions = 2 # number of discrete actions in [-force_mag,+force_mag]
+        self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
@@ -44,6 +44,7 @@ class CartPoleDynamicRewardV2(gym.Env):
             np.finfo(np.float32).max,
             self.theta_magnitude * 2,
             np.finfo(np.float32).max])
+        self.delta = 0
 
         self.action_space = spaces.Discrete(self.nb_actions)
         self.observation_space = spaces.Box(-high, high)
@@ -144,8 +145,8 @@ class CartPoleDynamicRewardV2(gym.Env):
                 self.viewer = None
             return
 
-        screen_width = 900
-        screen_height = 600
+        screen_width = 600
+        screen_height = 400
 
         world_width = self.x_threshold*2
         scale = screen_width/world_width

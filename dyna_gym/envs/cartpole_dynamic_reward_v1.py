@@ -26,8 +26,8 @@ class CartPoleDynamicRewardV1(gym.Env):
         self.total_mass = (self.masspole + self.masscart)
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
-        self.force_mag = 10.0
-        self.nb_actions = 5 # number of discrete actions in [-force_mag,+force_mag]
+        self.force_mag = 15.0
+        self.nb_actions = 9 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
@@ -105,6 +105,7 @@ class CartPoleDynamicRewardV1(gym.Env):
             reward = 1.0
         else:
             reward = 0.0
+        reward -= abs(x - self.center)**2
         '''
         elif self.steps_beyond_done is None:
             # Pole just fell!
@@ -146,8 +147,8 @@ class CartPoleDynamicRewardV1(gym.Env):
                 self.viewer = None
             return
 
-        screen_width = 900
-        screen_height = 600
+        screen_width = 600
+        screen_height = 400
 
         world_width = self.x_threshold*2
         scale = screen_width/world_width

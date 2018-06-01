@@ -100,6 +100,8 @@ class IQUCT(object):
         self.reg = regularization
         self.deg = degree
 
+        self.reg_datasz = []#TRM
+
     def reset(self):
         '''
         Reset Agent's attributes.
@@ -118,6 +120,7 @@ class IQUCT(object):
         Data should have the form [[x,y], ...].
         Return the prediction at the value specified by x
         '''
+        self.reg_datasz.append(len(data))#TRM
         X = []
         y = []
         for d in data:
@@ -221,4 +224,14 @@ class IQUCT(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         update_histories(self.histories, root, env)
+
+
+        print('Bilan reg:')#TRM
+        for i in range(100): #TRM
+            if self.reg_datasz.count(i) > 0:
+                print('{} reg with {} pt'.format(self.reg_datasz.count(i),i))
+        self.reg_datasz = []
+        print()#TRM
+
+
         return max(root.children, key=self.inferred_value).action
