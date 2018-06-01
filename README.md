@@ -19,12 +19,16 @@ For each environment, the id given as argument to the gym.make function is write
 - <b>CartPoleDynamicReward-v1</b>. A cart pole environment with a double objective: to balance the pole and to keep the position of the cart along the x-axis within a time-varying interval;
 <p align="center">
 	<img height="250" width="auto" src="img/cartpole_nsreward1.gif">
+</p>
+<p align="center">
 	Cart pole in the <b>CartPoleDynamicReward-v1</b> environment. The two red dots correspond to the limiting interval.
 </p>
 
 - <b>CartPoleDynamicReward-v2</b>. A cart pole environment with a time-varying cone into which the pole should balance.
 <p align="center">
 	<img height="250" width="auto" src="img/cartpole_nsreward2.gif">
+</p>
+<p align="center">
 	Cart pole in the <b>CartPoleDynamicReward-v2</b> environment. The two black lines correspond to the limiting angle interval.
 </p>
 

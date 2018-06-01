@@ -105,7 +105,6 @@ class CartPoleDynamicRewardV1(gym.Env):
             reward = 1.0
         else:
             reward = 0.0
-        reward -= abs(x - self.center)**2
         '''
         elif self.steps_beyond_done is None:
             # Pole just fell!

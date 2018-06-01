@@ -25,7 +25,7 @@ class CartPoleDynamicTransition(gym.Env):
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
         self.force_mag = 10.0
-        self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
+        self.nb_actions = 5 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
@@ -33,8 +33,8 @@ class CartPoleDynamicTransition(gym.Env):
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        self.alpha_max_radians = 70 * 2 * math.pi / 360 # maximum inclination
-        self.alpha_period = 1. # inclination period in seconds
+        self.alpha_max_radians = 20 * 2 * math.pi / 360 # maximum inclination
+        self.alpha_period = 2. # inclination period in seconds
 
         # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
         high = np.array([
@@ -198,6 +198,6 @@ class CartPoleDynamicTransition(gym.Env):
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
         self.carttrans.set_translation(cartx, carty)
         self.poletrans.set_rotation(-x[2])
-        self.vecttrans.set_rotation(-self.alpha)
+        self.vecttrans.set_rotation(self.alpha)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')
