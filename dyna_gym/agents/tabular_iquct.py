@@ -1,7 +1,3 @@
-"""
-Inferred Q-values UCT Algorithm
-"""
-
 import gym
 import random
 import itertools
@@ -67,9 +63,12 @@ class ChanceNode:
             if (h[1] == self.action) and env.equality_operator(h[0],self.parent.state):
                 self.history = copy(h[2])
 
-class IQUCT(object):
+class TabularIQUCT(object):
     '''
-    IQUCT agent
+    Tabular Inferred Q-values UCT Algorithm
+
+    Tabular wrt state-action space.
+    Inferences are made for each encountered state-action pair.
 
     The regression parameters are the following:
 
@@ -95,7 +94,6 @@ class IQUCT(object):
         self.use_averaged_qval = use_averaged_qval
         self.reg = regularization
         self.deg = degree
-        #self.reg_datasz = []#TRM
 
     def reset(self):
         '''
@@ -107,7 +105,7 @@ class IQUCT(object):
         '''
         Update the collected histories.
         Recursive method.
-        @TODO discard the elements once their duration is zero?
+
         '''
         for child in node.children:
             if child.sampled_returns: # Ensure there are sampled returns
@@ -125,9 +123,9 @@ class IQUCT(object):
                 if not match: # No match occured, add a new history
                     h = []
                     if self.use_averaged_qval:
-                            h = [snapshot_value(child),duration]
-                        else:
-                            h = append_node_data([], child, duration)
+                        h.append([snapshot_value(child),duration])
+                    else:
+                        h = append_node_data([], child, duration)
                     histories.append([child.parent.state, child.action, h])
                 # Recursive call
                 for grandchild in child.children:
@@ -145,7 +143,6 @@ class IQUCT(object):
         Data should have the form [[x,y], ...].
         Return the prediction at the value specified by x
         '''
-        #self.reg_datasz.append(len(data))#TRM
         X = []
         y = []
         for d in data:
@@ -256,14 +253,5 @@ class IQUCT(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         self.update_histories(self.histories, root, env)
-
-        '''
-        print('Bilan reg: deg={} reg={}'.format(self.deg, self.reg))#TRM
-        for i in range(1000): #TRM
-            cnti = self.reg_datasz.count(i)
-            if cnti > 0:
-                print('{} reg with {} pt'.format(cnti,i))
-        self.reg_datasz = []
-        '''
 
         return max(root.children, key=self.inferred_value).action
