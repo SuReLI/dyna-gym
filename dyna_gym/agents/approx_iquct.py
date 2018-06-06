@@ -55,7 +55,7 @@ class ApproxIQUCT(object):
     Tabular wrt action space only.
     Generalization is made through state-temporal space.
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, use_averaged_qval):
+    def __init__(self, action_space, state_dim, gamma, rollouts, max_depth, ucb_constant, use_averaged_qval):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
@@ -65,13 +65,13 @@ class ApproxIQUCT(object):
         self.is_model_initialized = False
         # Model parameters
         self.use_averaged_qval = use_averaged_qval
-        self.model = lwprmdl.LWPRForIQUCT()
+        self.model = lwprmdl.LWPRForIQUCT(state_dim)
 
     def reset(self):
         '''
         Reset Agent's attributes.
         '''
-        #TODO
+        self.model.reset()
 
     def inferred_value(self, node):
         '''
@@ -192,5 +192,7 @@ class ApproxIQUCT(object):
                 node = node.parent.parent
         self.update_model(root, env)
         self.is_model_initialized = True
+
+        print('model trained with {} data pts'.format(self.model.model.n_data))#TRM
 
         return max(root.children, key=self.inferred_value).action
