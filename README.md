@@ -13,7 +13,7 @@ For each environment, the id given as argument to the gym.make function is write
 	<img height="250" width="auto" src="img/cartpole_nstransition.gif">
 </p>
 <p align="center">
-	Cart pole in the <b>CartPoleDynamicTransition-v0</b> environment. The red bar indicates the direction of the gravitational force
+	Cart pole in the <b>CartPoleDynamicTransition-v0</b> environment. The red bar indicates the direction of the gravitational force.
 </p>
 
 - <b>CartPoleDynamicReward-v1</b>. A cart pole environment with a double objective: to balance the pole and to keep the position of the cart along the x-axis within a time-varying interval;

@@ -6,6 +6,7 @@ import gym
 import random
 import itertools
 import numpy as np
+import statistics as stat
 from math import sqrt, log
 from copy import copy
 from sklearn.linear_model import Ridge
@@ -24,31 +25,14 @@ def combinations(space):
     else:
         raise NotImplementedError
 
-def update_histories(histories, node, env):
+def append_node_data(vect, node, duration):
     '''
-    Update the collected histories.
-    Recursive method.
-    @TODO discard the elements once their duration is zero?
+    Get the data points of the input node and append it to the given vector.
+    A data point is a "sampled return-duration" pair.
     '''
-    for child in node.children:
-        if child.sampled_returns: # Ensure there are sampled returns
-            # Update history of child
-            match = False
-            duration = child.depth * env.tau
-            for h in histories:
-                if (h[1] == child.action) and env.equality_operator(h[0],child.parent.state): # The child's state-action pair matches an already built history
-                    h[2].append([snapshot_value(child),duration])
-                    match = True
-                    break
-            if not match: # No match occured, add a new history
-                histories.append([
-                    child.parent.state,
-                    child.action,
-                    [[snapshot_value(child),duration]]
-                ])
-            # Recursive call
-            for grandchild in child.children:
-                update_histories(histories, grandchild, env)
+    for smpl in node.sampled_returns:
+        vect.append([smpl,duration])
+    return vect
 
 class DecisionNode:
     '''
@@ -86,8 +70,20 @@ class ChanceNode:
 class IQUCT(object):
     '''
     IQUCT agent
+
+    The regression parameters are the following:
+
+        use_averaged_qval; set to True in order to use the averaged estimated Q-values as
+        data points for regression. Set to False in order to use the raw sampled returns.
+        Setting this to False will put more importance on data points from nodes that have
+        been visited many times. Conversely, the number of visits of the node has no effect
+        on the data weight if this parameter is set to false.
+
+        regularization; classical regularization for Ridge regression
+
+        degree; degree of the polynomial features
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, regularization, degree):
+    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, use_averaged_qval, regularization, degree):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
@@ -95,18 +91,47 @@ class IQUCT(object):
         self.is_model_dynamic = False # default
         self.histories = [] # saved histories
         self.ucb_constant = ucb_constant
-
         # Regression parameters
+        self.use_averaged_qval = use_averaged_qval
         self.reg = regularization
         self.deg = degree
-
-        self.reg_datasz = []#TRM
+        #self.reg_datasz = []#TRM
 
     def reset(self):
         '''
         Reset Agent's attributes.
         '''
         self.histories = [] # saved histories
+
+    def update_histories(self, histories, node, env):
+        '''
+        Update the collected histories.
+        Recursive method.
+        @TODO discard the elements once their duration is zero?
+        '''
+        for child in node.children:
+            if child.sampled_returns: # Ensure there are sampled returns
+                # Update history of child
+                match = False
+                duration = child.depth * env.tau
+                for h in histories:
+                    if (h[1] == child.action) and env.equality_operator(h[0],child.parent.state): # The child's state-action pair matches an already built history
+                        if self.use_averaged_qval:
+                            h[2].append([snapshot_value(child),duration])
+                        else:
+                            h[2] = append_node_data(h[2], child, duration)
+                        match = True
+                        break
+                if not match: # No match occured, add a new history
+                    h = []
+                    if self.use_averaged_qval:
+                            h = [snapshot_value(child),duration]
+                        else:
+                            h = append_node_data([], child, duration)
+                    histories.append([child.parent.state, child.action, h])
+                # Recursive call
+                for grandchild in child.children:
+                    self.update_histories(histories, grandchild, env)
 
     def poly_feature(self, x):
         result = np.array([],float)
@@ -120,16 +145,22 @@ class IQUCT(object):
         Data should have the form [[x,y], ...].
         Return the prediction at the value specified by x
         '''
-        self.reg_datasz.append(len(data))#TRM
+        #self.reg_datasz.append(len(data))#TRM
         X = []
         y = []
         for d in data:
-            X = np.append(X, self.poly_feature(d[0]))
-            y = np.append(y, d[1])
+            X = np.append(X, self.poly_feature(d[1]))
+            y = np.append(y, d[0])
         X = X.reshape((len(data), self.deg+1))
         clf = Ridge(alpha=self.reg)
         clf.fit(X, y)
         return clf.predict(self.poly_feature(x).reshape(1,-1))
+
+    def mean_hist(self, h):
+        qvalues = []
+        for pair in h:
+            qvalues.append(pair[0])
+        return stat.mean(qvalues)
 
     def inferred_value(self, node):
         '''
@@ -138,6 +169,7 @@ class IQUCT(object):
         @TODO maybe consider inferring only with a higher number of data points
         '''
         if(len(node.history) > 1):
+            #return self.mean_hist(node.history)
             return self.poly_reg(node.history, 0)
         else:
             return snapshot_value(node)
@@ -223,15 +255,15 @@ class IQUCT(object):
                     estimate = rewards.pop() + self.gamma * estimate
                 node.parent.visits += 1
                 node = node.parent.parent
-        update_histories(self.histories, root, env)
+        self.update_histories(self.histories, root, env)
 
-
-        print('Bilan reg:')#TRM
-        for i in range(100): #TRM
-            if self.reg_datasz.count(i) > 0:
-                print('{} reg with {} pt'.format(self.reg_datasz.count(i),i))
+        '''
+        print('Bilan reg: deg={} reg={}'.format(self.deg, self.reg))#TRM
+        for i in range(1000): #TRM
+            cnti = self.reg_datasz.count(i)
+            if cnti > 0:
+                print('{} reg with {} pt'.format(cnti,i))
         self.reg_datasz = []
-        print()#TRM
-
+        '''
 
         return max(root.children, key=self.inferred_value).action
