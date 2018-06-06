@@ -68,7 +68,8 @@ class TabularIQUCT(object):
     Tabular Inferred Q-values UCT Algorithm
 
     Tabular wrt state-action space.
-    Inferences are made for each encountered state-action pair.
+    Generalization is made through temporal space only (ie prediction).
+    Inferences are performed for each encountered state-action pair.
 
     The regression parameters are the following:
 
@@ -94,6 +95,7 @@ class TabularIQUCT(object):
         self.use_averaged_qval = use_averaged_qval
         self.reg = regularization
         self.deg = degree
+        #self.reg_datasz = []#TRM
 
     def reset(self):
         '''
@@ -105,7 +107,6 @@ class TabularIQUCT(object):
         '''
         Update the collected histories.
         Recursive method.
-
         '''
         for child in node.children:
             if child.sampled_returns: # Ensure there are sampled returns
@@ -143,6 +144,7 @@ class TabularIQUCT(object):
         Data should have the form [[x,y], ...].
         Return the prediction at the value specified by x
         '''
+        #self.reg_datasz.append(len(data))#TRM
         X = []
         y = []
         for d in data:
@@ -253,5 +255,14 @@ class TabularIQUCT(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         self.update_histories(self.histories, root, env)
+
+        '''
+        print('Bilan reg: deg={} reg={}'.format(self.deg, self.reg))#TRM
+        for i in range(1000): #TRM
+            cnti = self.reg_datasz.count(i)
+            if cnti > 0:
+                print('{} reg with {} pt'.format(cnti,i))
+        self.reg_datasz = []
+        '''
 
         return max(root.children, key=self.inferred_value).action
