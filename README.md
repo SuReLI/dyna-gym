@@ -53,3 +53,9 @@ pip install -e .
 Examples are provided in the <i>example/</i> repository. You can run them using your
 installed version of Python.
 
+# Dependencies (edit June 12 June 2018)
+
+The package depends on several classic Python libraries. An up to date list is the following: copy; csv; gym; itertools; logging; math; matplotlib; numpy; random; setuptools; statistics.
+
+Non classic libraries are also used by some algorithms: scikit-learn (see <a href="http://scikit-learn.org/stable/index.html">website</a>); lwpr (see <a href="https://github.com/lhlmgr/lwpr">git repository</a> for a Python 3 binding).
+
