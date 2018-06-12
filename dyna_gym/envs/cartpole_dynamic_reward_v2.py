@@ -93,7 +93,7 @@ class CartPoleDynamicRewardV2(gym.Env):
             time = time + self.tau
         state_p = (x,x_dot,theta,theta_dot,time)
         # Termination criterion
-        self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)#TRM
+        self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
         ''' #TODO put back
         done =  x < -self.x_threshold \
                 or x > self.x_threshold \

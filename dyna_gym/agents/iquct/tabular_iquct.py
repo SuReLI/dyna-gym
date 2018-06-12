@@ -83,7 +83,7 @@ class TabularIQUCT(object):
 
         degree; degree of the polynomial features
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, use_averaged_qval, regularization, degree):
+    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, regularization, degree):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
@@ -92,7 +92,7 @@ class TabularIQUCT(object):
         self.histories = [] # saved histories
         self.ucb_constant = ucb_constant
         # Regression parameters
-        self.use_averaged_qval = use_averaged_qval
+        self.use_averaged_qval = False
         self.reg = regularization
         self.deg = degree
         #self.reg_datasz = []#TRM
@@ -167,9 +167,8 @@ class TabularIQUCT(object):
         No inference is performed if the history is empty or has too few data points.
         @TODO maybe consider inferring only with a higher number of data points
         '''
-        if(len(node.history) > 1):
-            #return self.mean_hist(node.history)
-            return self.poly_reg(node.history, 0)
+        if (len(node.history) > 1) and (node.depth > 0):
+            self.poly_reg(node.history, 0)
         else:
             return snapshot_value(node)
 

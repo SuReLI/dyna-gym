@@ -4,7 +4,6 @@ import itertools
 import numpy as np
 import statistics as stat
 from math import sqrt, log
-import dyna_gym.agents.lwpr_for_iquct as lwprmdl
 
 def snapshot_value(node):
     '''
@@ -55,17 +54,14 @@ class ApproxIQUCT(object):
     Tabular wrt action space only.
     Generalization is made through state-temporal space.
     '''
-    def __init__(self, action_space, state_dim, gamma, rollouts, max_depth, ucb_constant, use_averaged_qval):
+    def __init__(self, action_space, gamma, rollouts, max_depth, ucb_constant, model):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
         self.is_model_dynamic = False # default
         self.ucb_constant = ucb_constant
-        self.is_model_initialized = False
-        # Model parameters
-        self.use_averaged_qval = use_averaged_qval
-        self.model = lwprmdl.LWPRForIQUCT(state_dim)
+        self.model = model
 
     def reset(self):
         '''
@@ -78,10 +74,14 @@ class ApproxIQUCT(object):
         Value estimate of a chance node wrt selected predictor
         No inference is performed if the history is empty or has too few data points.
         '''
-        if self.is_model_initialized:
+        return self.model.prediction_at(np.array(node.parent.state), 0.0, node.action)
+        ''' #TRM
+        @deprecated
+        if self.model.is_ready():
             return self.model.prediction_at(np.array(node.parent.state), 0.0, node.action)
         else:
-            return snapshot_value(node) #TODO write the model inference TRM
+            return snapshot_value(node)
+        '''
 
     def ucb(self, node):
         '''
@@ -98,11 +98,7 @@ class ApproxIQUCT(object):
         for child in node.children:
             duration = child.depth * env.tau
             if child.sampled_returns: # Ensure there are sampled returns
-                if self.use_averaged_qval:
-                    data.append([np.array(child.parent.state), duration, child.action, snapshot_value(child)])
-                else:
-                    for q in child.sampled_returns:
-                        data.append([np.array(child.parent.state), duration, child.action, q])
+                data.append([np.array(child.parent.state), duration, child.action, snapshot_value(child)])
                 # Recursive call
                 for grandchild in child.children:
                     self.extract_data(data, grandchild, env)
@@ -191,8 +187,5 @@ class ApproxIQUCT(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         self.update_model(root, env)
-        self.is_model_initialized = True
-
-        print('model trained with {} data pts'.format(self.model.model.n_data))#TRM
-
+        self.model.print_info()#TRM
         return max(root.children, key=self.inferred_value).action
