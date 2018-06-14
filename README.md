@@ -5,7 +5,7 @@ It contains both the dynamic environments i.e. whose transition and reward funct
 
 # Environments
 
-The implemented environments are the following and can be found at <i>dyna-gym/dyna_gym/envs</i>.
+The implemented environments are the following and can be found at `dyna-gym/dyna_gym/envs`.
 For each environment, the id given as argument to the gym.make function is writen in bold.
 
 - <b>CartPoleDynamicTransition-v0</b>. A cart pole environment with a time-varying direction of the gravitational force;
@@ -35,7 +35,7 @@ For each environment, the id given as argument to the gym.make function is write
 
 # Algorithms
 
-The implemented algorithms are the following and can be found at <i>dyna-gym/dyna_gym/agents</i>.
+The implemented algorithms are the following and can be found at `dyna-gym/dyna_gym/agents`.
 - Random action selection;
 - <a href="http://ggp.stanford.edu/readings/uct.pdf">UCT algorithm</a>;
 - <a href="https://arxiv.org/abs/1805.01367">OLUCT algorithm</a>;
@@ -50,12 +50,14 @@ cd dyna-gym
 pip install -e .
 ```
 
-Examples are provided in the <i>example/</i> repository. You can run them using your
+Examples are provided in the `example/` repository. You can run them using your
 installed version of Python.
 
-# Dependencies (edit June 12 June 2018)
+# Dependencies
+
+Edit June 12 June 2018.
 
 The package depends on several classic Python libraries. An up to date list is the following: copy; csv; gym; itertools; logging; math; matplotlib; numpy; random; setuptools; statistics.
 
-Non classic libraries are also used by some algorithms: scikit-learn (see <a href="http://scikit-learn.org/stable/index.html">website</a>); lwpr (see <a href="https://github.com/lhlmgr/lwpr">git repository</a> for a Python 3 binding).
+Non classic libraries are also used by some algorithms: scikit-learn (see <a href="http://scikit-learn.org/stable/index.html">website</a>); LWPR (see <a href="https://github.com/lhlmgr/lwpr">git repository</a> for a Python 3 binding).
 
