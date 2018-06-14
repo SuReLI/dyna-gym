@@ -23,11 +23,8 @@ for ts in range(timesteps):
     if verbose:
         env.print_state()
     env.render()
-    # Termination
     if ts+1 == timesteps:
-        if verbose:
-            print("Episode reached the end ({} timesteps)".format(ts+1))
+        print("Successfully reached end of episode ({} timesteps)".format(ts+1))
     if done:
-        if verbose:
-            print("Episode finished after {} timesteps".format(ts+1))
+        print("Episode finished after {} timesteps".format(ts+1))
         break

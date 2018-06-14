@@ -12,26 +12,19 @@ agent = uct.UCT(
     is_model_dynamic=True,
     ucb_constant=0.707
 )
-timesteps = 1000
-verbose = True
+timesteps = 100
+verbose = False
 
 ### Run
 env.reset()
 done = False
-cumulative_reward = 0
 for ts in range(timesteps):
     __, reward, done, __ = env.step(agent.act(env,done))
-    cumulative_reward += reward
     if verbose:
         env.print_state()
     env.render()
-    # Termination
     if ts+1 == timesteps:
-        if verbose:
-            print("Episode reached the end ({} timesteps)".format(ts+1))
+        print("Successfully reached end of episode ({} timesteps)".format(ts+1))
     if done:
-        if verbose:
-            print("Episode finished after {} timesteps".format(ts+1))
+        print("Episode finished after {} timesteps".format(ts+1))
         break
-if verbose:
-    print('Cummulative reward: {}'.format(cumulative_reward))
