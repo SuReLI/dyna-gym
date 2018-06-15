@@ -3,3 +3,4 @@ local
 outdated
 log
 *.egg-info
+examples/uct_nativecartpole.py
