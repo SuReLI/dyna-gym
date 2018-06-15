@@ -54,9 +54,6 @@ class CartPoleDynamicRewardV2(gym.Env):
         self.state = None
         self.steps_beyond_done = None
 
-    def get_state(self):
-        return self.state
-
     def equality_operator(self, s1, s2):
         '''
         Equality operator, return True if the two input states are equal.
@@ -91,7 +88,7 @@ class CartPoleDynamicRewardV2(gym.Env):
         theta_dot = theta_dot + self.tau * thetaacc
         if is_model_dynamic:
             time = time + self.tau
-        state_p = (x,x_dot,theta,theta_dot,time)
+        state_p = (x, x_dot, theta, theta_dot, time)
         # Termination criterion
         self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
         ''' #TODO put back

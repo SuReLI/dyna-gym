@@ -71,7 +71,7 @@ class UCT(object):
     def reset(self):
         '''
         Reset Agent's attributes.
-        Nothing to reset.
+        Nothing to reset for UCT agent.
         '''
 
     def ucb(self, node):
@@ -84,7 +84,7 @@ class UCT(object):
         '''
         Compute the entire UCT procedure
         '''
-        root = DecisionNode(None, env.get_state(), done)
+        root = DecisionNode(None, env.state, done)
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node

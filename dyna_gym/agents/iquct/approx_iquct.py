@@ -35,17 +35,35 @@ class DecisionNode:
         self.explored_children = 0
         self.visits = 0
 
+class History:
+    def __init__(self, state, action):
+        self.state = state
+        self.action = action
+        self.data = [] # list of HistoryTuple
+
+    def corresponds_to(self, state, action, env):
+        return (self.action == action) and env.equality_operator(self.state, state)
+
+class HistoryTuple:
+    def __init__(self, depth, value):
+        self.depth = depth
+        self.value = value
+
 class ChanceNode:
     '''
     Chance node class, labelled by a state-action pair
     The state is accessed via the parent attribute
     '''
-    def __init__(self, parent, action, env):
+    def __init__(self, parent, action, env, histories):
         self.parent = parent
         self.action = action
         self.depth = parent.depth
         self.children = []
         self.sampled_returns = []
+        self.history = []
+        for h in histories:
+            if h.corresponds_to(self.parent.state, self.action, env):
+                self.history = h.data
 
 class ApproxIQUCT(object):
     '''
@@ -60,6 +78,7 @@ class ApproxIQUCT(object):
         self.rollouts = rollouts
         self.max_depth = max_depth
         self.is_model_dynamic = False # default
+        self.histories = [] # saved histories
         self.ucb_constant = ucb_constant
         self.model = model
 
@@ -67,21 +86,45 @@ class ApproxIQUCT(object):
         '''
         Reset Agent's attributes.
         '''
+        self.histories = [] # saved histories
         self.model.reset()
+
+    def update_histories(self, node, env):
+        '''
+        Update the collected histories.
+        Recursive method.
+        '''
+        for child in node.children:
+            if child.sampled_returns: # Ensure there are sampled returns
+                # Update history of child
+                match = False
+                for h in self.histories:
+                    if h.corresponds_to(child.parent.state, child.action, env):
+                        h.data.append(HistoryTuple(child.depth, snapshot_value(child)))
+                        match = True
+                        break
+                if not match: # No match occured, add a new history
+                    self.histories.append(History(child.parent.state, child.action))
+                    self.histories[-1].data.append(HistoryTuple(child.depth, snapshot_value(child)))
+                # Recursive call
+                for grandchild in child.children:
+                    self.update_histories(grandchild, env)
 
     def inferred_value(self, node):
         '''
         Value estimate of a chance node wrt selected predictor
-        No inference is performed if the history is empty or has too few data points.
         '''
-        return self.model.prediction_at(np.array(node.parent.state), 0.0, node.action)
-        ''' #TRM
-        @deprecated
-        if self.model.is_ready():
-            return self.model.prediction_at(np.array(node.parent.state), 0.0, node.action)
+        if node.history:
+            return self.model.prediction_at(
+                node.action, # a
+                np.concatenate(( # x
+                    node.parent.state,
+                    np.array(node.depth, ndmin=1),
+                    np.array(snapshot_value(node), ndmin=1)
+                ))
+            )
         else:
             return snapshot_value(node)
-        '''
 
     def ucb(self, node):
         '''
@@ -89,33 +132,40 @@ class ApproxIQUCT(object):
         '''
         return self.inferred_value(node) + self.ucb_constant * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
-    def extract_data(self, data, node, env):
+    def extract_data(self, node):
         '''
         Extract the data from the tree starting at the input node.
         Recursive function.
-        Data have the form (s, t, a, Q)
+        Data have the form [a, x, y]
+        where x = [s, d, qd] and y = q0
         '''
+        data = []
         for child in node.children:
-            duration = child.depth * env.tau
-            if child.sampled_returns: # Ensure there are sampled returns
-                data.append([np.array(child.parent.state), duration, child.action, snapshot_value(child)])
-                # Recursive call
-                for grandchild in child.children:
-                    self.extract_data(data, grandchild, env)
+            for h in child.history:
+                data.append([
+                    child.action, # a
+                    np.concatenate(( # x
+                        child.parent.state,
+                        np.array(h.depth, ndmin=1),
+                        np.array(h.value, ndmin=1)
+                    )),
+                    np.array(snapshot_value(child), ndmin=1) # y
+                ])
+        return data
 
-    def update_model(self, root_node, env):
+    def update_model(self, root_node):
         '''
         Collect the data in the tree and update the prediction model.
         '''
-        data = []
-        self.extract_data(data, root_node, env)
-        self.model.update(data)
+        data = self.extract_data(root_node)
+        if data:
+            self.model.update(data)
 
     def act(self, env, done):
         '''
         Compute the entire UCT procedure
         '''
-        root = DecisionNode(None, env.get_state(), done)
+        root = DecisionNode(None, env.state, done)
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node
@@ -161,7 +211,7 @@ class ApproxIQUCT(object):
                 if terminal:
                     node = node.parent
                 else:
-                    node.children = [ChanceNode(node,a,env) for a in combinations(env.action_space)]
+                    node.children = [ChanceNode(node,a,env,self.histories) for a in combinations(env.action_space)]
                     random.shuffle(node.children)
                     child = node.children[0]
                     node.explored_children += 1
@@ -186,6 +236,6 @@ class ApproxIQUCT(object):
                     estimate = rewards.pop() + self.gamma * estimate
                 node.parent.visits += 1
                 node = node.parent.parent
-        self.update_model(root, env)
-        self.model.print_info()#TRM
+        self.update_histories(root, env)
+        self.update_model(root)
         return max(root.children, key=self.inferred_value).action

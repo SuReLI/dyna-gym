@@ -57,7 +57,6 @@ class ChanceNode:
         self.depth = parent.depth
         self.children = []
         self.sampled_returns = []
-
         self.history = []
         for h in histories:
             if (h[1] == self.action) and env.equality_operator(h[0],self.parent.state):
@@ -103,7 +102,7 @@ class TabularIQUCT(object):
         '''
         self.histories = [] # saved histories
 
-    def update_histories(self, histories, node, env):
+    def update_histories(self, node, env):
         '''
         Update the collected histories.
         Recursive method.
@@ -113,7 +112,7 @@ class TabularIQUCT(object):
                 # Update history of child
                 match = False
                 duration = child.depth * env.tau
-                for h in histories:
+                for h in self.histories:
                     if (h[1] == child.action) and env.equality_operator(h[0],child.parent.state): # The child's state-action pair matches an already built history
                         if self.use_averaged_qval:
                             h[2].append([snapshot_value(child),duration])
@@ -127,10 +126,10 @@ class TabularIQUCT(object):
                         h.append([snapshot_value(child),duration])
                     else:
                         h = append_node_data([], child, duration)
-                    histories.append([child.parent.state, child.action, h])
+                    self.histories.append([child.parent.state, child.action, h])
                 # Recursive call
                 for grandchild in child.children:
-                    self.update_histories(histories, grandchild, env)
+                    self.update_histories(grandchild, env)
 
     def poly_feature(self, x):
         result = np.array([],float)
@@ -182,7 +181,7 @@ class TabularIQUCT(object):
         '''
         Compute the entire UCT procedure
         '''
-        root = DecisionNode(None, env.get_state(), done)
+        root = DecisionNode(None, env.state, done)
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node
@@ -253,7 +252,7 @@ class TabularIQUCT(object):
                     estimate = rewards.pop() + self.gamma * estimate
                 node.parent.visits += 1
                 node = node.parent.parent
-        self.update_histories(self.histories, root, env)
+        self.update_histories(root, env)
 
         '''
         print('Bilan reg: deg={} reg={}'.format(self.deg, self.reg))#TRM

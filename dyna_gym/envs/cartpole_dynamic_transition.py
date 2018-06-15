@@ -51,9 +51,6 @@ class CartPoleDynamicTransition(gym.Env):
         self.state = None
         self.steps_beyond_done = None
 
-    def get_state(self):
-        return self.state
-
     def equality_operator(self, s1, s2):
         '''
         Equality operator, return True if the two input states are equal.

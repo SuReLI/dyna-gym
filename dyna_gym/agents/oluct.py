@@ -67,7 +67,7 @@ class OLUCT(object):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node
             terminal = done
-            state = env.get_state()
+            state = env.state
 
             # Selection
             while len(node.children) != 0: # While node has children
