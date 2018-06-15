@@ -37,6 +37,7 @@ For each environment, the id given as argument to the gym.make function is write
 
 The implemented algorithms are the following and can be found at `dyna-gym/dyna_gym/agents`.
 - Random action selection;
+- Vanilla MCTS algorithm (random tree policy);
 - <a href="http://ggp.stanford.edu/readings/uct.pdf">UCT algorithm</a>;
 - <a href="https://arxiv.org/abs/1805.01367">OLUCT algorithm</a>;
 - IQUCT (Infered Q-values UCT) algorithm.
