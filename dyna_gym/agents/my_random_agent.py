@@ -12,5 +12,5 @@ class MyRandomAgent(object):
         Nothing to reset.
         '''
 
-    def act(self, observation, reward, done):
+    def act(self, observation=None, reward=None, done=None):
         return self.action_space.sample()
