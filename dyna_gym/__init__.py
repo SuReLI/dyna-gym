@@ -1,6 +1,11 @@
 from gym.envs.registration import register
 
 register(
+    id='NSChain-v0',
+    entry_point='dyna_gym.envs:NSChain',
+)
+
+register(
     id='CartPoleDynamicTransition-v0',
     entry_point='dyna_gym.envs:CartPoleDynamicTransition',
 )
