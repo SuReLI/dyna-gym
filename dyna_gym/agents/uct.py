@@ -84,16 +84,16 @@ class UCT(object):
         '''
         Compute the entire UCT procedure
         '''
-        root = DecisionNode(None, env.state, done)
+        self.root = DecisionNode(None, env.state, done)
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
-            node = root # Current node
+            node = self.root # Current node
             terminal = done
 
             # Selection
             select = True
             expand_chance_node = False
-            while select and (len(root.children) != 0):
+            while select and (len(self.root.children) != 0):
                 if (type(node) == DecisionNode): # Decision node
                     if node.is_terminal: # Terminal, evaluate parent
                         node = node.parent
@@ -155,4 +155,4 @@ class UCT(object):
                     estimate = rewards.pop() + self.gamma * estimate
                 node.parent.visits += 1
                 node = node.parent.parent
-        return max(root.children, key=chance_node_value).action
+        return max(self.root.children, key=chance_node_value).action
