@@ -20,17 +20,16 @@ class NSChain(gym.Env):
     }
 
     def __init__(self):
-        self.n_states = 50
+        self.n_states = 5
         self.tau = 1
 
         # Dynamic parameters
         self.r_evolution_speed = 1
-        self.r_center = 0
+        self.r_center = 0 # Initial center
         self.r_variance = self.n_states / 6
-        self.r_period = 200 * self.tau
+        self.r_period = 10 * self.tau
 
         self.action_space = spaces.Discrete(3) # left, noop, right
-        #self.observation_space = spaces.Box(-high, high)
 
         self._seed()
         self.viewer = None
@@ -45,8 +44,10 @@ class NSChain(gym.Env):
         self.ax1 = self.fig.add_subplot(gs1[0])
         self.ax2 = self.fig.add_subplot(gs1[1])
         '''
+        '''
         self.fig, (self.ax1, self.ax2) = plt.subplots(2, 1)
         self.fig.show()
+        '''
 
     def initial_state(self):
         return (int(self.n_states / 2),0)
@@ -81,7 +82,7 @@ class NSChain(gym.Env):
                 position_p += 1
         if is_model_dynamic:
             time_p += self.tau
-        state_p = (position_p,time_p)
+        state_p = (int(position_p),time_p)
         # Termination criterion
         done = False
         # Reward
@@ -110,6 +111,7 @@ class NSChain(gym.Env):
         return self.state
 
     def render(self, mode='human', close=False):
+        '''
         rwds = []
         for i in range(self.n_states + 1):
             rwds.append(self.reward(i, self.state[1]))
@@ -124,4 +126,5 @@ class NSChain(gym.Env):
         self.ax2.scatter(self.state[0], 0, c='r')
 
         self.fig.canvas.draw()
+        '''
         #plt.pause(1.0)
