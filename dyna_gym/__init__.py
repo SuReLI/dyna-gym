@@ -6,6 +6,11 @@ register(
 )
 
 register(
+    id='NSRandomMDP-v0',
+    entry_point='dyna_gym.envs:NSRandomMDP',
+)
+
+register(
     id='CartPoleDynamicTransition-v0',
     entry_point='dyna_gym.envs:CartPoleDynamicTransition',
 )
