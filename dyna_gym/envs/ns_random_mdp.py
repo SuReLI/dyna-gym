@@ -6,8 +6,7 @@ import logging
 import math
 import gym
 import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.gridspec as gridspec
+from scipy.stats import wasserstein_distance
 from gym import error, spaces, utils
 from gym.utils import seeding
 
@@ -20,15 +19,16 @@ class NSRandomMDP(gym.Env):
     }
 
     def __init__(self):
-        self.n_states = 2
-        self.n_timestep = 3 # maximal number of timesteps
+        self.n_pos = 2
+        self.n_actions = 3
+        self.pos_space = np.array(range(self.n_pos))
+        self.action_space = spaces.Discrete(self.n_actions) # each action corresponds to the position the agent wants to reach
+        self.n_timestep = 5 # maximal number of timesteps
         self.timestep = 1 # timestep duration
-        self.L_p = 1 # transition kernel Lipschitz constant
+        self.L_p = 0.1 # transition kernel Lipschitz constant
         self.L_r = 1 # reward function Lipschitz constant
 
         self.transition_matrix = self.generate_transition_matrix()
-
-        self.action_space = spaces.Discrete(self.n_states) # each action corresponds to the position the agent wants to reach
 
         self._seed()
         self.viewer = None
@@ -46,29 +46,49 @@ class NSRandomMDP(gym.Env):
         return [seed]
 
     def random_tabular_distribution(self, size):
-        d = np.random.random(size)
-        d = d / np.sum(d)
-        return d
+        u_weights = np.random.random(size)
+        return u_weights / np.sum(u_weights)
 
-    def randomly_evolve_distribution(self, d, maxdist):
+    def randomly_constrained_distribution(self, u_values, u_weights, maxdist):
         '''
-        Randomly generate a new distribution wrt previous distribution d
-        st Wasserstein distance between both distributions is smaller than maxdist.
+        Randomly generate a new distribution st the Wasserstein distance between the input
+        distribution u and the generated distribution is smaller than the input maxdist.
+        Notive that the generated distribution has the same values as the input distribution.
         '''
-        #TODO
-        return d + 1
+        max_n_trial = 100 # Maximum number of trials
+        v_weights = self.random_tabular_distribution(u_values.size)
+        for i in range(max_n_trial):
+            if wasserstein_distance(u_values,u_values,u_weights,v_weights) <= maxdist:
+                print(i)
+                return v_weights
+            else:
+                v_weights = self.random_tabular_distribution(u_values.size)
+        print('Failed to generate constrained distribution after {} trials'.format(max_n_trial))
+        exit()
 
     def generate_transition_matrix(self):
-        T = np.zeros(shape=(self.n_states, self.n_states, self.n_timestep, self.n_states), dtype=float)
-        for i in range(self.n_states): # s
-            for j in range(self.n_states): # a
-                # Generate distribution for t=0
-                T[i,j,0,:] = self.random_tabular_distribution(size=self.n_states)
+        T = np.zeros(shape=(self.n_pos, self.n_actions, self.n_timestep, self.n_pos), dtype=float)
+        for i in range(self.n_pos): # s
+            for j in range(self.n_actions): # a
+                # 1. Generate distribution for t=0
+                T[i,j,0,:] = self.random_tabular_distribution(size=self.n_pos)
+                # 2. Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.n_timestep): # t
-                    # Build subsequent distributions st LC constraint is respected
-                    T[i,j,t,:] = self.randomly_evolve_distribution(T[i,j,t-1,:], self.L_p * self.timestep)
+                    T[i,j,t,:] = self.randomly_constrained_distribution(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
         print(T)
         return T
+
+    def transition_probability_distribution(self, s, t, a):
+        '''
+        Return the distribution of the transition probability conditionned by (s, t, a)
+        '''
+        return self.transition_matrix[s, a, t]
+
+    def transition_probability(self, s_p, s, t, a):
+        '''
+        Return the probability of transition to s_p conditionned by (s, t, a)
+        '''
+        return self.transition_matrix[s, a, t, s_p]
 
     def equality_operator(self, s1, s2):
         '''
