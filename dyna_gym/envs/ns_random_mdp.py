@@ -25,10 +25,11 @@ class NSRandomMDP(gym.Env):
         self.action_space = spaces.Discrete(self.n_actions) # each action corresponds to the position the agent wants to reach
         self.n_timestep = 5 # maximal number of timesteps
         self.timestep = 1 # timestep duration
-        self.L_p = 0.1 # transition kernel Lipschitz constant
-        self.L_r = 1 # reward function Lipschitz constant
+        self.L_p = 1 # transition kernel Lipschitz constant
+        self.L_r = 0.1 # reward function Lipschitz constant
 
         self.transition_matrix = self.generate_transition_matrix()
+        self.reward_matrix = self.generate_reward_matrix()
 
         self._seed()
         self.viewer = None
@@ -59,7 +60,6 @@ class NSRandomMDP(gym.Env):
         v_weights = self.random_tabular_distribution(u_values.size)
         for i in range(max_n_trial):
             if wasserstein_distance(u_values,u_values,u_weights,v_weights) <= maxdist:
-                print(i)
                 return v_weights
             else:
                 v_weights = self.random_tabular_distribution(u_values.size)
@@ -75,7 +75,6 @@ class NSRandomMDP(gym.Env):
                 # 2. Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.n_timestep): # t
                     T[i,j,t,:] = self.randomly_constrained_distribution(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
-        print(T)
         return T
 
     def transition_probability_distribution(self, s, t, a):
@@ -90,15 +89,33 @@ class NSRandomMDP(gym.Env):
         '''
         return self.transition_matrix[s, a, t, s_p]
 
+    def generate_reward_matrix(self):
+        R = np.zeros(shape=(self.n_pos, self.n_actions, self.n_timestep), dtype=float)
+        for i in range(self.n_pos): # s
+            for j in range(self.n_actions): # a
+                # 1. Generate instant reward for t=0
+                R[i,j,0] = np.random.random(size=None)
+                # 2. Build subsequent instant rewards st LC constraint is respected
+                for t in range(1, self.n_timestep): # t
+                    R[i,j,t] = R[i,j,t-1] + self.L_r * self.timestep * (2 * np.random.random(size=None) - 1)
+                    if R[i,j,t] > 1:
+                        R[i,j,t] = 1
+                    if R[i,j,t] < 0:
+                        R[i,j,t] = 0
+        print(R)
+        return R
+
+    def reward(self, s, t, a):
+        '''
+        Return the instant reward r(s, t, a)
+        '''
+        return self.reward_matrix[s, a, t]
+
     def equality_operator(self, s1, s2):
         '''
         Equality operator, return True if the two input states are equal.
         '''
         return (s1 == s2)
-
-    def reward(self, state, action):
-        #TODO
-        return 0
 
     def transition(self, state, action, is_model_dynamic):
         '''
