@@ -23,7 +23,7 @@ class NSRandomMDP(gym.Env):
         self.n_actions = 3
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions) # each action corresponds to the position the agent wants to reach
-        self.n_timestep = 5 # maximal number of timesteps
+        self.n_timestep = 100 # maximal number of timesteps
         self.timestep = 1 # timestep duration
         self.L_p = 1 # transition kernel Lipschitz constant
         self.L_r = 0.1 # reward function Lipschitz constant
@@ -102,7 +102,6 @@ class NSRandomMDP(gym.Env):
                         R[i,j,t] = 1
                     if R[i,j,t] < 0:
                         R[i,j,t] = 0
-        print(R)
         return R
 
     def reward(self, s, t, a):
@@ -125,14 +124,13 @@ class NSRandomMDP(gym.Env):
         to the state vector or not.
         '''
         position_p, time_p = self.state
-        # TODO assert that action is valid
-        # TODO process position_p wrt action
+        reward = self.reward(position_p, time_p, action)
+        transition_model = self.transition_probability_distribution(position_p, time_p, action)
+        position_p = np.random.choice(self.pos_space, size=None, replace=False, p=transition_model)
         if is_model_dynamic:
             time_p += self.timestep
         state_p = (int(position_p), time_p)
         done = False # Termination criterion
-        # TODO process Reward
-        reward = 0
         return state_p, reward, done
 
     def step(self, action):
