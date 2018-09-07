@@ -19,10 +19,10 @@ class NSRandomMDP(gym.Env):
     }
 
     def __init__(self):
-        self.n_pos = 30
-        self.n_actions = 10
+        self.n_pos = 4
+        self.n_actions = 2
         self.pos_space = np.array(range(self.n_pos))
-        self.action_space = spaces.Discrete(self.n_actions) # each action corresponds to the position the agent wants to reach
+        self.action_space = spaces.Discrete(self.n_actions)
         self.n_timestep = 100 # maximal number of timesteps
         self.timestep = 1 # timestep duration
         self.L_p = 1 # transition kernel Lipschitz constant
