@@ -23,7 +23,7 @@ class NSRandomMDP(gym.Env):
         self.n_actions = 2
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions)
-        self.n_timestep = 100 # maximal number of timesteps
+        self.n_timestep = 5 # maximal number of timesteps
         self.timestep = 1 # timestep duration
         self.L_p = 1 # transition kernel Lipschitz constant
         self.L_r = 0.1 # reward function Lipschitz constant
@@ -142,8 +142,20 @@ class NSRandomMDP(gym.Env):
         self.state, reward, done = self.transition(self.state, action, True)
         return self.state, reward, done, {}
 
+    def is_terminal(self, state):
+        return False
+
     def print_state(self):
         print('pos: {}; t: {}'.format(self.state[0],self.state[1]))
+
+    def get_state_space_at_time(self, t):
+        space = []
+        for i in range(self.n_pos):
+            space.append([self.pos_space[i], t])
+        return space
+
+    def get_time(self):
+        return self.state[1]
 
     def reset(self):
         self.state = self.initial_state()

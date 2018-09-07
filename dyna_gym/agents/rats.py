@@ -10,9 +10,10 @@ class DecisionNode:
     '''
     Decision node class, labelled by a state
     '''
-    def __init__(self, parent, state, is_terminal):
+    def __init__(self, parent, state, weight, is_terminal):
         self.parent = parent
         self.state = state
+        self.weight = weight # Probability to occur
         self.is_terminal = is_terminal
         if self.parent is None: # Root node
             self.depth = 0
@@ -37,6 +38,7 @@ class RATS(object):
     '''
     def __init__(self, action_space, max_depth):
         self.action_space = action_space
+        self.n_actions = self.action_space.shape[0]
         self.max_depth = max_depth
 
     def reset(self):
@@ -44,15 +46,30 @@ class RATS(object):
         Reset Agent's attributes. Nothing to reset for RATS agent.
         '''
 
-    def build_tree(self, node):
+    def build_tree(self, node, env):
         if type(node) is DecisionNode:
-            #TODO
+            if (node.depth < self.max_depth):
+                for a in range(self.n_actions):
+                    node.children.append(ChanceNode(node, a))
+                for ch in node.children:
+                    self.build_tree(ch, env)
         else: #ChanceNode
-            #TODO
+            for s_p in env.get_state_space_at_time(env.get_time()):
+                node.children.append(
+                    DecisionNode(
+                        node,
+                        s_p,
+                        env.transition_probability(s_p[0], node.parent.state[0], env.get_time(), node.action),
+                        env.is_terminal(s_p)
+                    )
+                )
+            for ch in node.children:
+                self.build_tree(ch, env)
+            #TODO test
 
     def initialize_tree(self, env, done):
-        node = DecisionNode(None, env.state, done)
-        self.build_tree(node)
+        node = DecisionNode(None, env.state, 1, done)
+        self.build_tree(node, env)
         return node
 
     def minimax(self, node):
