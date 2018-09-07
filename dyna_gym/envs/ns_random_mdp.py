@@ -19,8 +19,8 @@ class NSRandomMDP(gym.Env):
     }
 
     def __init__(self):
-        self.n_pos = 2
-        self.n_actions = 3
+        self.n_pos = 30
+        self.n_actions = 10
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions) # each action corresponds to the position the agent wants to reach
         self.n_timestep = 100 # maximal number of timesteps
@@ -31,7 +31,7 @@ class NSRandomMDP(gym.Env):
         self.transition_matrix = self.generate_transition_matrix()
         self.reward_matrix = self.generate_reward_matrix()
 
-        self._seed()
+        #self._seed()
         self.viewer = None
         self.state = self.initial_state()
         self.steps_beyond_done = None
@@ -56,7 +56,7 @@ class NSRandomMDP(gym.Env):
         distribution u and the generated distribution is smaller than the input maxdist.
         Notive that the generated distribution has the same values as the input distribution.
         '''
-        max_n_trial = 100 # Maximum number of trials
+        max_n_trial = 1000 # Maximum number of trials
         v_weights = self.random_tabular_distribution(u_values.size)
         for i in range(max_n_trial):
             if wasserstein_distance(u_values,u_values,u_weights,v_weights) <= maxdist:
