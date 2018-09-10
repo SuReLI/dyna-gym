@@ -47,30 +47,36 @@ class RATS(object):
         '''
 
     def build_tree(self, node, env):
-        if type(node) is DecisionNode:
+        if type(node) is DecisionNode: #DecisionNode
             if (node.depth < self.max_depth):
                 for a in range(self.n_actions):
                     node.children.append(ChanceNode(node, a))
-                for ch in node.children:
-                    self.build_tree(ch, env)
+            else: #Reached maximum depth
+                return None
         else: #ChanceNode
             for s_p in env.get_state_space_at_time(env.get_time()):
                 node.children.append(
                     DecisionNode(
-                        node,
-                        s_p,
-                        env.transition_probability(s_p[0], node.parent.state[0], env.get_time(), node.action),
-                        env.is_terminal(s_p)
+                        parent=node,
+                        state=s_p,
+                        weight=env.transition_probability(s_p[0], node.parent.state[0], env.get_time(), node.action),
+                        is_terminal=env.is_terminal(s_p)
                     )
                 )
-            for ch in node.children:
-                self.build_tree(ch, env)
-            #TODO test
+        for ch in node.children:
+            self.build_tree(ch, env)
 
     def initialize_tree(self, env, done):
-        node = DecisionNode(None, env.state, 1, done)
-        self.build_tree(node, env)
-        return node
+        '''
+        Initialize an empty tree.
+        The tree is composed with all the possible actions as chance nodes and all the possible state-outcome as decision nodes.
+        The used model is the snapshot MDP provided by the environment at the time of the environment.
+        The depth of the tree is defined by the self.max_depth attribute of the agent.
+        The used heuristic for the evaluation of the leaf nodes that are not terminal nodes is defined by the function self.heuristic_value.
+        '''
+        root = DecisionNode(None, env.state, 1, done)
+        self.build_tree(root, env)
+        return root
 
     def minimax(self, node):
         '''
@@ -96,7 +102,11 @@ class RATS(object):
             return self.heuristic_value(node)
         #TODO etc
 
-    def heuristic_value(self):
+    def heuristic_value(self, state, env):
+        '''
+        Return the heuristic value of the input state.
+        This value is computed via Monte-Carlo simulations using the snapshot MDP provided by the environment at the time of the environment.
+        '''
         #TODO
         return 0
 

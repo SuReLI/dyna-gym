@@ -19,7 +19,7 @@ class NSRandomMDP(gym.Env):
     }
 
     def __init__(self):
-        self.n_pos = 4
+        self.n_pos = 3
         self.n_actions = 2
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions)
