@@ -21,9 +21,10 @@ class NSRandomMDP(gym.Env):
     def __init__(self):
         self.n_pos = 3
         self.n_actions = 2
+        self.n_timestep = 5 # maximal number of timesteps
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions)
-        self.n_timestep = 5 # maximal number of timesteps
+
         self.timestep = 1 # timestep duration
         self.L_p = 1 # transition kernel Lipschitz constant
         self.L_r = 0.1 # reward function Lipschitz constant
@@ -36,15 +37,15 @@ class NSRandomMDP(gym.Env):
         self.state = self.initial_state()
         self.steps_beyond_done = None
 
+    def _seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
+
     def initial_state(self):
         '''
         Initial state is [position=0, time=0]
         '''
         return [0, 0]
-
-    def _seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
 
     def random_tabular_distribution(self, size):
         u_weights = np.random.random(size)
@@ -80,13 +81,27 @@ class NSRandomMDP(gym.Env):
     def transition_probability_distribution(self, s, t, a):
         '''
         Return the distribution of the transition probability conditionned by (s, t, a)
+        If a full state (time-enhanced) is provided as argument , only the position is used
         '''
+        pos = s
+        if (type(pos) == list):
+            pos = pos[0]
+        assert(isinstance(pos,np.int64) or isinstance(pos, int))
         return self.transition_matrix[s, a, t]
 
     def transition_probability(self, s_p, s, t, a):
         '''
         Return the probability of transition to s_p conditionned by (s, t, a)
+        If a full state (time-enhanced) is provided as argument , only the position is used
         '''
+        pos = s
+        pos_p = s_p
+        if (type(pos) == list):
+            pos = pos[0]
+        if (type(pos_p) == list):
+            pos_p = pos_p[0]
+        assert(isinstance(pos,np.int64) or isinstance(pos, int))
+        assert(isinstance(pos_p,np.int64) or isinstance(pos_p, int))
         return self.transition_matrix[s, a, t, s_p]
 
     def generate_reward_matrix(self):
@@ -146,7 +161,7 @@ class NSRandomMDP(gym.Env):
         return False
 
     def print_state(self):
-        print('pos: {}; t: {}'.format(self.state[0],self.state[1]))
+        print('position: {}; t: {}'.format(self.state[0],self.state[1]))
 
     def get_state_space_at_time(self, t):
         space = []
@@ -166,3 +181,4 @@ class NSRandomMDP(gym.Env):
         '''
         No rendering yet
         '''
+        return None

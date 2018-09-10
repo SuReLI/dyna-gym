@@ -59,7 +59,7 @@ class RATS(object):
                     DecisionNode(
                         parent=node,
                         state=s_p,
-                        weight=env.transition_probability(s_p[0], node.parent.state[0], env.get_time(), node.action),
+                        weight=env.transition_probability(s_p, node.parent.state, env.get_time(), node.action),
                         is_terminal=env.is_terminal(s_p)
                     )
                 )
