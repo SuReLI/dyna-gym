@@ -144,7 +144,7 @@ class NSRandomMDP(gym.Env):
         position_p = np.random.choice(self.pos_space, size=None, replace=False, p=transition_model)
         if is_model_dynamic:
             time_p += self.timestep
-        state_p = (int(position_p), time_p)
+        state_p = [int(position_p), time_p]
         done = False # Termination criterion
         return state_p, reward, done
 

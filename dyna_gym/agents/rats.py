@@ -36,10 +36,14 @@ class RATS(object):
     '''
     RATS agent
     '''
-    def __init__(self, action_space, max_depth):
+    def __init__(self, action_space, max_depth, gamma, L_v, horizon):
         self.action_space = action_space
         self.n_actions = self.action_space.shape[0]
         self.max_depth = max_depth
+
+        self.gamma = gamma # discount factor
+        self.L_v = L_v # value function's Lipschitz constant
+        self.horizon = horizon # maximum number of timesteps for MC simulations
 
     def reset(self):
         '''
@@ -78,7 +82,7 @@ class RATS(object):
         self.build_tree(root, env)
         return root
 
-    def minimax(self, node):
+    def minimax(self, node, env):
         '''
         Pseudocode:
         minimax(node, depth, maximizingPlayer) is
@@ -99,21 +103,32 @@ class RATS(object):
         minimax(origin, depth, TRUE)
         '''
         if (node.depth == self.max_depth) or ((type(node) is DecisionNode) and node.is_terminal):
-            return self.heuristic_value(node)
+            return self.heuristic_value(node, env)
         #TODO etc
 
-    def heuristic_value(self, state, env):
+    def heuristic_value(self, node, env):
         '''
         Return the heuristic value of the input state.
         This value is computed via Monte-Carlo simulations using the snapshot MDP provided by the environment at the time of the environment.
         '''
-        #TODO
-        return 0
+        assert(type(node) == DecisionNode)
+        value = 0
+        s = node.state
+        t = env.get_time()
+        for t in range(self.horizon):
+            a = self.action_space.sample()
+            s, r, done = env.transition(s, a, is_model_dynamic=False)
+            value = value + self.gamma**t * r
+        return value - self.L_v * env.timestep * node.depth
 
     def act(self, env, done):
         '''
         Compute the entire RATS procedure
         '''
         self.root = self.initialize_tree(env, done)
-        self.minimax(self.root)
+        ### TEST
+        print(self.heuristic_value(self.root, env))
+        exit()
+        ###
+        self.minimax(self.root, env)
         return max(self.root.children, key=chance_node_value).action
