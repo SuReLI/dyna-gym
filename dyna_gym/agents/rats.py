@@ -5,6 +5,8 @@ Risk Averse Tree Search (RATS) algorithm
 import gym
 import random
 import itertools
+import numpy as np
+import dyna_gym.utils.distribution as distribution
 
 class DecisionNode:
     '''
@@ -88,21 +90,25 @@ class RATS(object):
         if (type(node) is DecisionNode):
             value = -1e99
             for ch in node.children:
-                value = max(value, minimax(ch, env))
+                value = max(value, self.minimax(ch, env))
             return value
         else: # ChanceNode
             self.set_worst_case_distribution(node, env) # min operator
             value = env.reward(node.parent.state, env.get_time(), node.action) - env.L_r * env.timestep * node.depth # pessimistic reward value
             for ch in node.children: # pessimistic look-ahead value
-                value = value + self.gamma * ch.weight * minimax(ch, env)
+                value = value + self.gamma * ch.weight * self.minimax(ch, env)
             return value
 
     def set_worst_case_distribution(self, node, env):
         '''
-        Modify the weights of the children so that the worst distribution is set.
+        Modify the weights of the children so that the worst distribution is set wrt their values.
         '''
-        #TODO
-        return None
+        v_0 = np.zeros(shape=len(node.children), dtype=float)
+        for i in range(len(node.children)):
+            v_0[i] = node.children[i].weight
+        print(v_0)
+        exit()
+        return v_0
 
     def heuristic_value(self, node, env):
         '''
@@ -123,9 +129,5 @@ class RATS(object):
         Compute the entire RATS procedure
         '''
         self.root = self.initialize_tree(env, done)
-        ### TEST
-        print(self.heuristic_value(self.root, env))
-        exit()
-        ###
         self.minimax(self.root, env)
         return max(self.root.children, key=chance_node_value).action

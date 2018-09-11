@@ -6,6 +6,9 @@ import numpy as np
 from scipy.stats import wasserstein_distance
 
 def random_tabular(size):
+    '''
+    Generate a 1D numpy array whose coefficients sum to 1
+    '''
     u_weights = np.random.random(size)
     return u_weights / np.sum(u_weights)
 

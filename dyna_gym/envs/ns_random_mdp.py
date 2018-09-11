@@ -6,7 +6,7 @@ import logging
 import math
 import gym
 import numpy as np
-from scipy.stats import wasserstein_distance
+import dyna_gym.utils.distribution as distribution
 from gym import error, spaces, utils
 from gym.utils import seeding
 
@@ -47,35 +47,15 @@ class NSRandomMDP(gym.Env):
         '''
         return [0, 0]
 
-    def random_tabular_distribution(self, size):
-        u_weights = np.random.random(size)
-        return u_weights / np.sum(u_weights)
-
-    def randomly_constrained_distribution(self, u_values, u_weights, maxdist):
-        '''
-        Randomly generate a new distribution st the Wasserstein distance between the input
-        distribution u and the generated distribution is smaller than the input maxdist.
-        Notive that the generated distribution has the same values as the input distribution.
-        '''
-        max_n_trial = 1000 # Maximum number of trials
-        v_weights = self.random_tabular_distribution(u_values.size)
-        for i in range(max_n_trial):
-            if wasserstein_distance(u_values,u_values,u_weights,v_weights) <= maxdist:
-                return v_weights
-            else:
-                v_weights = self.random_tabular_distribution(u_values.size)
-        print('Failed to generate constrained distribution after {} trials'.format(max_n_trial))
-        exit()
-
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.n_pos, self.n_actions, self.n_timestep, self.n_pos), dtype=float)
         for i in range(self.n_pos): # s
             for j in range(self.n_actions): # a
                 # 1. Generate distribution for t=0
-                T[i,j,0,:] = self.random_tabular_distribution(size=self.n_pos)
+                T[i,j,0,:] = distribution.random_tabular(size=self.n_pos)
                 # 2. Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.n_timestep): # t
-                    T[i,j,t,:] = self.randomly_constrained_distribution(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
+                    T[i,j,t,:] = distribution.random_constrained(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
         return T
 
     def transition_probability_distribution(self, s, t, a):
@@ -87,7 +67,7 @@ class NSRandomMDP(gym.Env):
         if (type(pos) == list):
             pos = pos[0]
         assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.transition_matrix[s, a, t]
+        return self.transition_matrix[pos, a, t]
 
     def transition_probability(self, s_p, s, t, a):
         '''
@@ -102,7 +82,7 @@ class NSRandomMDP(gym.Env):
             pos_p = pos_p[0]
         assert(isinstance(pos,np.int64) or isinstance(pos, int))
         assert(isinstance(pos_p,np.int64) or isinstance(pos_p, int))
-        return self.transition_matrix[s, a, t, s_p]
+        return self.transition_matrix[pos, a, t, pos_p]
 
     def generate_reward_matrix(self):
         R = np.zeros(shape=(self.n_pos, self.n_actions, self.n_timestep), dtype=float)
@@ -128,7 +108,7 @@ class NSRandomMDP(gym.Env):
         if (type(pos) == list):
             pos = pos[0]
         assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.reward_matrix[s, a, t]
+        return self.reward_matrix[pos, a, t]
 
     def equality_operator(self, s1, s2):
         '''
