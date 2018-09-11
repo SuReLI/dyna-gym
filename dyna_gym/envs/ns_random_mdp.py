@@ -122,7 +122,12 @@ class NSRandomMDP(gym.Env):
     def reward(self, s, t, a):
         '''
         Return the instant reward r(s, t, a)
+        If a full state (time-enhanced) is provided as argument , only the position is used
         '''
+        pos = s
+        if (type(pos) == list):
+            pos = pos[0]
+        assert(isinstance(pos,np.int64) or isinstance(pos, int))
         return self.reward_matrix[s, a, t]
 
     def equality_operator(self, s1, s2):

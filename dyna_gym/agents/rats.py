@@ -63,7 +63,7 @@ class RATS(object):
                     DecisionNode(
                         parent=node,
                         state=s_p,
-                        weight=env.transition_probability(s_p, node.parent.state, env.get_time(), node.action),
+                        weight=env.transition_probability(s_p, node.parent.state, env.get_time(), node.action), # TODO test if good weight
                         is_terminal=env.is_terminal(s_p)
                     )
                 )
@@ -83,28 +83,26 @@ class RATS(object):
         return root
 
     def minimax(self, node, env):
-        '''
-        Pseudocode:
-        minimax(node, depth, maximizingPlayer) is
-            if depth = 0 or node is a terminal node then
-                return the heuristic value of node
-            if maximizingPlayer then
-                value := −∞
-                for each child of node do
-                value := max(value, minimax(child, depth − 1, FALSE))
-                return value
-            else (* minimizing player *)
-                value := +∞
-                for each child of node do
-                value := min(value, minimax(child, depth − 1, TRUE))
-                return value
-
-        Call:
-        minimax(origin, depth, TRUE)
-        '''
-        if (node.depth == self.max_depth) or ((type(node) is DecisionNode) and node.is_terminal):
+        if (type(node) is DecisionNode) and (node.is_terminal or (node.depth == self.max_depth)):
             return self.heuristic_value(node, env)
-        #TODO etc
+        if (type(node) is DecisionNode):
+            value = -1e99
+            for ch in node.children:
+                value = max(value, minimax(ch, env))
+            return value
+        else: # ChanceNode
+            self.set_worst_case_distribution(node, env) # min operator
+            value = env.reward(node.parent.state, env.get_time(), node.action) - env.L_r * env.timestep * node.depth # pessimistic reward value
+            for ch in node.children: # pessimistic look-ahead value
+                value = value + self.gamma * ch.weight * minimax(ch, env)
+            return value
+
+    def set_worst_case_distribution(self, node, env):
+        '''
+        Modify the weights of the children so that the worst distribution is set.
+        '''
+        #TODO
+        return None
 
     def heuristic_value(self, node, env):
         '''
@@ -114,7 +112,6 @@ class RATS(object):
         assert(type(node) == DecisionNode)
         value = 0
         s = node.state
-        t = env.get_time()
         for t in range(self.horizon):
             a = self.action_space.sample()
             s, r, done = env.transition(s, a, is_model_dynamic=False)
