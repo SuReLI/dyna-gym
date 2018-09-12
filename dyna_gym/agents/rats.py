@@ -9,6 +9,10 @@ import numpy as np
 import dyna_gym.utils.distribution as distribution
 from scipy.stats import wasserstein_distance
 
+def node_value(node):
+    assert(node.value != None)
+    return node.value
+
 class DecisionNode:
     '''
     Decision node class, labelled by a state
@@ -173,5 +177,4 @@ class RATS(object):
         self.t_call = env.get_time()
         self.root = self.initialize_tree(env, done)
         self.minimax(self.root, env)
-        exit()
-        return max(self.root.children, key=chance_node_value).action
+        return max(self.root.children, key=node_value).action
