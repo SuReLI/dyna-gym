@@ -6,8 +6,8 @@ register(
 )
 
 register(
-    id='NSRandomMDP-v0',
-    entry_point='dyna_gym.envs:NSRandomMDP',
+    id='RandomNSMDP-v0',
+    entry_point='dyna_gym.envs:RandomNSMDP',
 )
 
 register(

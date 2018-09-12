@@ -12,7 +12,7 @@ from gym.utils import seeding
 
 logger = logging.getLogger(__name__)
 
-class NSRandomMDP(gym.Env):
+class RandomNSMDP(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second' : 50
