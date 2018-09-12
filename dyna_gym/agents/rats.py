@@ -7,6 +7,7 @@ import random
 import itertools
 import numpy as np
 import dyna_gym.utils.distribution as distribution
+from scipy.stats import wasserstein_distance
 
 class DecisionNode:
     '''
@@ -22,6 +23,7 @@ class DecisionNode:
         else: # Non root node
             self.depth = parent.depth + 1
         self.children = []
+        self.value = None
 
 class ChanceNode:
     '''
@@ -33,6 +35,7 @@ class ChanceNode:
         self.action = action
         self.depth = parent.depth
         self.children = []
+        self.value = None
 
 class RATS(object):
     '''
@@ -85,30 +88,68 @@ class RATS(object):
         return root
 
     def minimax(self, node, env):
-        if (type(node) is DecisionNode) and (node.is_terminal or (node.depth == self.max_depth)):
-            return self.heuristic_value(node, env)
         if (type(node) is DecisionNode):
-            value = -1e99
-            for ch in node.children:
-                value = max(value, self.minimax(ch, env))
-            return value
+            if (node.is_terminal or (node.depth == self.max_depth)):
+                assert(node.parent.parent.parent.parent.parent == None)
+                assert(node.value == None)
+                node.value = self.heuristic_value(node, env)
+            else:
+                v = -1e99
+                for ch in node.children:
+                    v = max(v, self.minimax(ch, env))
+                assert(node.value == None)
+                node.value = v
         else: # ChanceNode
             self.set_worst_case_distribution(node, env) # min operator
-            value = env.reward(node.parent.state, env.get_time(), node.action) - env.L_r * env.timestep * node.depth # pessimistic reward value
-            for ch in node.children: # pessimistic look-ahead value
-                value = value + self.gamma * ch.weight * self.minimax(ch, env)
-            return value
+            v = 0
+            for ch in node.children: # pessimistic look-ahead values
+                v += ch.weight * ch.value #self.minimax(ch, env)
+            v *= self.gamma
+            v += env.reward(node.parent.state, env.get_time(), node.action) - env.L_r * env.timestep * node.depth # pessimistic reward value
+            assert(node.value == None)
+            node.value = v
+        return node.value
 
     def set_worst_case_distribution(self, node, env):
         '''
         Modify the weights of the children so that the worst distribution is set wrt their values.
         '''
-        v_0 = np.zeros(shape=len(node.children), dtype=float)
-        for i in range(len(node.children)):
+        assert(type(node) is ChanceNode)
+        n_states = len(node.children)
+        n_trials = 1000
+
+        # 1. Generate random distributions
+        v_0 = np.zeros(shape=n_states, dtype=float)
+        for i in range(n_states):
             v_0[i] = node.children[i].weight
-        print(v_0)
-        exit()
-        return v_0
+        buff = np.empty(shape=(n_trials, n_states), dtype=float)
+        buff[0] = v_0
+        for i in range(1,n_trials):
+            buff[i] = distribution.random_tabular(n_states)
+
+        # 2. Delete distributions too far from v_0
+        todelete = []
+        for i in range(n_trials):
+            if wasserstein_distance(range(n_states),range(n_states),v_0,buff[i]) > (node.depth * env.L_p * env.timestep):
+                todelete.append(i)
+        buff = np.delete(buff, todelete, 0)
+
+        #3. Unique recursive call st values are set
+        for ch in node.children:
+            self.minimax(ch, env)
+
+        #4. Pick the minimizing distribution
+        minval = 1e99
+        argmin = 0
+        for i in range(len(buff)):
+            val = 0
+            for j in range(len(node.children)):
+                val += buff[i][j] * node.children[j].value
+            if val < minval:
+                minval = val
+                argmin = i
+
+        return buff[argmin]
 
     def heuristic_value(self, node, env):
         '''
@@ -130,4 +171,5 @@ class RATS(object):
         '''
         self.root = self.initialize_tree(env, done)
         self.minimax(self.root, env)
+        exit()
         return max(self.root.children, key=chance_node_value).action
