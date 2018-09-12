@@ -45,6 +45,7 @@ class RATS(object):
         self.action_space = action_space
         self.n_actions = self.action_space.shape[0]
         self.max_depth = max_depth
+        self.t_call = None
 
         self.gamma = gamma # discount factor
         self.L_v = L_v # value function's Lipschitz constant
@@ -63,12 +64,12 @@ class RATS(object):
             else: #Reached maximum depth
                 return None
         else: #ChanceNode
-            for s_p in env.get_state_space_at_time(env.get_time()):
+            for s_p in env.get_state_space_at_time(self.t_call):
                 node.children.append(
                     DecisionNode(
                         parent=node,
                         state=s_p,
-                        weight=env.transition_probability(s_p, node.parent.state, env.get_time(), node.action), # TODO test if good weight
+                        weight=env.transition_probability(s_p, node.parent.state, self.t_call, node.action),
                         is_terminal=env.is_terminal(s_p)
                     )
                 )
@@ -105,7 +106,7 @@ class RATS(object):
             for ch in node.children: # pessimistic look-ahead values
                 v += ch.weight * ch.value #self.minimax(ch, env)
             v *= self.gamma
-            v += env.reward(node.parent.state, env.get_time(), node.action) - env.L_r * env.timestep * node.depth # pessimistic reward value
+            v += env.reward(node.parent.state, self.t_call, node.action) - env.L_r * env.timestep * node.depth # pessimistic reward value
             assert(node.value == None)
             node.value = v
         return node.value
@@ -169,6 +170,7 @@ class RATS(object):
         '''
         Compute the entire RATS procedure
         '''
+        self.t_call = env.get_time()
         self.root = self.initialize_tree(env, done)
         self.minimax(self.root, env)
         exit()
