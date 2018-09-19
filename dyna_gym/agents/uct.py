@@ -1,5 +1,11 @@
 """
 UCT Algorithm
+
+Required features of the environment:
+env.state
+env.action_space
+env.transition(s ,a , is_model_dynamic)
+env.equality_operator(s1, s2)
 """
 
 import gym
