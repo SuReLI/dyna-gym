@@ -1,5 +1,16 @@
 """
 Risk Averse Tree Search (RATS) algorithm
+
+Required features of the environment:
+env.state
+env.timestep
+env.L_p
+env.L_r
+env.is_terminal(state)
+env.get_state_space_at_time(time)
+env.transition_probability(s_p, s, t, a)
+env.reward(s, t, a)
+env.transition(s, a, is_model_dynamic)
 """
 
 import gym
