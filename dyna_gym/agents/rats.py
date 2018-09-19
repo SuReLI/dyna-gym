@@ -57,8 +57,9 @@ class RATS(object):
 
     def reset(self):
         '''
-        Reset Agent's attributes. Nothing to reset for RATS agent.
+        Reset Agent's attributes.
         '''
+        self.t_call = None
 
     def build_tree(self, node, env):
         if type(node) is DecisionNode: #DecisionNode
@@ -175,6 +176,6 @@ class RATS(object):
         Compute the entire RATS procedure
         '''
         self.t_call = env.get_time()
-        self.root = self.initialize_tree(env, done)
-        self.minimax(self.root, env)
-        return max(self.root.children, key=node_value).action
+        root = self.initialize_tree(env, done)
+        self.minimax(root, env)
+        return max(root.children, key=node_value).action
