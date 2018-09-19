@@ -4,30 +4,28 @@ Non-Stationary Randomly generated MDP
 
 import logging
 import math
-import gym
 import numpy as np
 import dyna_gym.utils.distribution as distribution
-from gym import error, spaces, utils
-from gym.utils import seeding
+from gym import Env, error, spaces, utils
 
 logger = logging.getLogger(__name__)
 
-class RandomNSMDP(gym.Env):
+class RandomNSMDP(Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second' : 50
     }
 
     def __init__(self):
-        self.n_pos = 3
-        self.n_actions = 2
-        self.n_timestep = 5 # maximal number of timesteps
+        self.n_pos = 50
+        self.n_actions = 10
+        self.n_timestep = 110 # maximal number of timesteps
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions)
 
         self.timestep = 1 # timestep duration
         self.L_p = 1 # transition kernel Lipschitz constant
-        self.L_r = 0.1 # reward function Lipschitz constant
+        self.L_r = 10 # reward function Lipschitz constant
 
         self.transition_matrix = self.generate_transition_matrix()
         self.reward_matrix = self.generate_reward_matrix()
@@ -38,7 +36,7 @@ class RandomNSMDP(gym.Env):
         self.steps_beyond_done = None
 
     def _seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
+        self.np_random, seed = utils.seeding.np_random(seed)
         return [seed]
 
     def initial_state(self):

@@ -18,7 +18,7 @@ def random_constrained(u_values, u_weights, maxdist):
     distribution u and the generated distribution is smaller than the input maxdist.
     Notice that the generated distribution has the same values as the input distribution.
     '''
-    max_n_trial = 1000 # Maximum number of trials
+    max_n_trial = 10000 # Maximum number of trials
     v_weights = random_tabular(u_values.size)
     for i in range(max_n_trial):
         if wasserstein_distance(u_values,u_values,u_weights,v_weights) <= maxdist:
