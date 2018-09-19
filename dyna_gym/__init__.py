@@ -11,6 +11,11 @@ register(
 )
 
 register(
+    id='NSFrozenLakeEnv-v0',
+    entry_point='dyna_gym.envs:NSFrozenLakeEnv',
+)
+
+register(
     id='CartPoleDynamicTransition-v0',
     entry_point='dyna_gym.envs:CartPoleDynamicTransition',
 )
