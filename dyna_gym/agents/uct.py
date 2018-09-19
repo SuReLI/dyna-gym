@@ -8,9 +8,9 @@ env.transition(s ,a , is_model_dynamic)
 env.equality_operator(s1, s2)
 """
 
-import gym
 import random
 import itertools
+from gym import spaces as gspaces
 from math import sqrt, log
 from copy import copy
 
@@ -27,9 +27,9 @@ def chance_node_value(node):
     return sum(node.sampled_returns) / len(node.sampled_returns)
 
 def combinations(space):
-    if isinstance(space, gym.spaces.Discrete):
+    if isinstance(space, gspaces.Discrete):
         return range(space.n)
-    elif isinstance(space, gym.spaces.Tuple):
+    elif isinstance(space, gspaces.Tuple):
         return itertools.product(*[combinations(s) for s in space.spaces])
     else:
         raise NotImplementedError
