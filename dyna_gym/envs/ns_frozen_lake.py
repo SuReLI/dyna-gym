@@ -66,7 +66,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4", is_slippery=True):
+    def __init__(self, desc=None, map_name="4x4", is_slippery=False):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -140,24 +140,40 @@ class NSFrozenLakeEnv(Env):
         return [seed]
 
     def _reset(self):
-        self.s = categorical_sample(self.isd, self.np_random)
+        self.state = categorical_sample(self.isd, self.np_random)
         self.lastaction=None
-        return self.s
+        return self.state
+
+    def equality_operator(self, s1, s2):
+        '''
+        Equality operator, return True if the two input states are equal.
+        '''
+        return (s1 == s2)
+
+    def transition(self, s, a, is_model_dynamic=True):
+        '''
+        Transition operator, return the resulting state, reward and a boolean indicating
+        whether the termination criterion is reached or not.
+        The boolean is_model_dynamic indicates whether the temporal transition is applied
+        to the state vector or not.
+        '''
+        transitions = self.P[s][a]
+        i = categorical_sample([t[0] for t in transitions], self.np_random)
+        p, s, r, d = transitions[i]
+        return s, r, d
 
     def _step(self, a):
-        transitions = self.P[self.s][a]
-        i = categorical_sample([t[0] for t in transitions], self.np_random)
-        p, s, r, d= transitions[i]
-        self.s = s
-        self.lastaction=a
-        return (s, r, d, {"prob" : p})
+        s, r, d = self.transition(self.state, a, True)
+        self.state = s
+        self.lastaction = a
+        return (s, r, d, {})
 
     def _render(self, mode='human', close=False):
         if close:
             return
         outfile = StringIO() if mode == 'ansi' else sys.stdout
 
-        row, col = self.s // self.ncol, self.s % self.ncol
+        row, col = self.state // self.ncol, self.state % self.ncol
         desc = self.desc.tolist()
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)

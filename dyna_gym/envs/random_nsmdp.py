@@ -138,7 +138,7 @@ class RandomNSMDP(Env):
         Return (observation, reward, termination criterion (boolean), informations)
         '''
         self.state, reward, done = self.transition(self.state, action, True)
-        return self.state, reward, done, {}
+        return (self.state, reward, done, {})
 
     def is_terminal(self, state):
         return False
