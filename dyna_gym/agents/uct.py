@@ -66,7 +66,7 @@ class UCT(object):
     '''
     UCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic, ucb_constant):
+    def __init__(self, action_space, rollouts, max_depth, gamma=0.9, ucb_constant=6.36396103068, is_model_dynamic=True):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
@@ -130,7 +130,7 @@ class UCT(object):
 
             # Expansion
             if expand_chance_node and (type(node) == ChanceNode): # Expand a chance node
-                node.children.append(DecisionNode(node,state_p,terminal))
+                node.children.append(DecisionNode(node, state_p, terminal))
                 node = node.children[-1]
             if (type(node) == DecisionNode): # Expand a decision node
                 if terminal:
