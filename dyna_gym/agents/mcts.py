@@ -10,6 +10,7 @@ env.equality_operator(s1, s2)
 
 import random
 import itertools
+import numpy as np
 from gym import spaces as gspaces
 from math import sqrt, log
 from copy import copy
@@ -38,7 +39,7 @@ class DecisionNode:
     '''
     Decision node class, labelled by a state
     '''
-    def __init__(self, parent, state, is_terminal):
+    def __init__(self, parent, state, possible_actions, is_terminal):
         self.parent = parent
         self.state = state
         self.is_terminal = is_terminal
@@ -47,6 +48,8 @@ class DecisionNode:
         else: # Non root node
             self.depth = parent.depth + 1
         self.children = []
+        self.possible_actions = possible_actions
+        random.shuffle(self.possible_actions)
         self.explored_children = 0
         self.visits = 0
 
@@ -66,11 +69,11 @@ class MCTS(object):
     '''
     MCTS agent
     '''
-    def __init__(self, action_space, rollouts, max_depth, gamma=0.9, is_model_dynamic=True):
-        self.action_space = action_space
-        self.gamma = gamma
+    def __init__(self, action_space, rollouts, gamma=0.9, is_model_dynamic=True):
+        self.action_space = list(combinations(action_space))
+        self.n_actions = len(self.action_space)
         self.rollouts = rollouts
-        self.max_depth = max_depth
+        self.gamma = gamma
         self.is_model_dynamic = is_model_dynamic
 
     def reset(self):
@@ -82,7 +85,7 @@ class MCTS(object):
         '''
         Compute the entire MCTS procedure
         '''
-        root = DecisionNode(None, env.state, done)
+        root = DecisionNode(None, env.state, self.action_space.copy(), done)
         for _ in range(self.rollouts):
             rewards = [] # Rewards collected along the tree for the current rollout
             node = root # Current node
@@ -90,63 +93,54 @@ class MCTS(object):
 
             # Selection
             select = True
-            expand_chance_node = False
-            while select and (len(root.children) != 0):
-                if (type(node) == DecisionNode): # Decision node
-                    if node.is_terminal: # Terminal, evaluate parent
-                        node = node.parent
-                        select = False
-                    else: # Decision node is not terminal
-                        if node.explored_children < len(node.children): # Go to unexplored chance node
-                            child = node.children[node.explored_children]
-                            node.explored_children += 1
-                            node = child
-                            select = False
-                        else: # Go to random chance node
+            while select:
+                if (type(node) == DecisionNode): # DecisionNode
+                    if node.is_terminal:
+                        select = False # Selected a terminal DecisionNode
+                    else:
+                        if len(node.children) < self.n_actions:
+                            select = False # Selected a non-fully-expanded DecisionNode
+                        else:
                             node = random.choice(node.children)
-                else: # Chance Node
-                    state_p, reward, terminal = env.transition(node.parent.state,node.action,self.is_model_dynamic)
+                else: # ChanceNode
+                    state_p, reward, terminal = env.transition(node.parent.state, node.action, self.is_model_dynamic)
                     rewards.append(reward)
-                    if (len(node.children) == 0): # No child
-                        expand_chance_node = True
-                        select = False
-                    else: # Already has children
+                    if (len(node.children) == 0):
+                        select = False # Selected a ChanceNode
+                    else:
                         for i in range(len(node.children)):
-                            if env.equality_operator(node.children[i].state,state_p): # State already sampled
+                            if env.equality_operator(node.children[i].state,state_p):
                                 node = node.children[i]
-                                break
-                            else: # New state sampled
-                                expand_chance_node = True
-                                select = False
-                                break
+                            else:
+                                select = False # Selected a ChanceNode
 
             # Expansion
-            if expand_chance_node and (type(node) == ChanceNode): # Expand a chance node
-                node.children.append(DecisionNode(node, state_p, terminal))
+            if (type(node) == ChanceNode) or ((type(node) == DecisionNode) and not node.is_terminal):
+                if (type(node) == DecisionNode):
+                    node.children.append(ChanceNode(node, node.possible_actions.pop()))
+                    node = node.children[-1]
+                    state_p, reward, terminal = env.transition(node.parent.state ,node.action, self.is_model_dynamic)
+                    rewards.append(reward)
+                # ChanceNode
+                assert(type(node) == ChanceNode) #TODO remove
+                node.children.append(DecisionNode(node, state_p, self.action_space.copy(), terminal))
                 node = node.children[-1]
-            if (type(node) == DecisionNode): # Expand a decision node
-                if terminal:
-                    node = node.parent
-                else:
-                    node.children = [ChanceNode(node, a) for a in combinations(env.action_space)]
-                    random.shuffle(node.children)
-                    child = node.children[0]
-                    node.explored_children += 1
-                    node = child
 
             # Evaluation
+            assert(type(node) == DecisionNode)
             t = 0
-            estimate = 0
-            state = node.parent.state
+            estimate = reward
+            state = node.state
             while not terminal:
                 action = env.action_space.sample() # default policy
-                state, reward, terminal = env.transition(state,action,self.is_model_dynamic)
+                state, reward, terminal = env.transition(state, action, self.is_model_dynamic)
                 estimate += reward * (self.gamma**t)
                 t += 1
-                if node.depth + t > self.max_depth:
-                    break
 
             # Backpropagation
+            node.visits += 1
+            node = node.parent
+            assert(type(node) == ChanceNode)
             while node:
                 node.sampled_returns.append(estimate)
                 if len(rewards) != 0:
