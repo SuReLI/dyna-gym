@@ -56,7 +56,7 @@ class RATS(object):
     '''
     RATS agent
     '''
-    def __init__(self, action_space, max_depth, gamma, L_v, horizon):
+    def __init__(self, action_space, max_depth, horizon, gamma=0.9, L_v=1):
         self.action_space = action_space
         self.n_actions = self.action_space.shape[0]
         self.max_depth = max_depth
@@ -64,7 +64,7 @@ class RATS(object):
 
         self.gamma = gamma # discount factor
         self.L_v = L_v # value function's Lipschitz constant
-        self.horizon = horizon # maximum number of timesteps for MC simulations
+        self.horizon = horizon # maximum number of timesteps for MC simulations in heuristic function
 
     def reset(self):
         '''
