@@ -6,11 +6,7 @@ import dyna_gym.agents.uct as uct
 env = gym.make('CartPoleDynamicTransition-v0')
 agent = uct.UCT(
     action_space=env.action_space,
-    gamma=0.9,
-    rollouts=100,
-    max_depth=1000,
-    is_model_dynamic=True,
-    ucb_constant=0.707
+    rollouts=100
 )
 timesteps = 100
 verbose = False
