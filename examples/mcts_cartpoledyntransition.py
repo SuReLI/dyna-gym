@@ -6,10 +6,7 @@ import dyna_gym.agents.mcts as mcts
 env = gym.make('CartPoleDynamicTransition-v0')
 agent = mcts.MCTS(
     action_space=env.action_space,
-    gamma=0.9,
-    rollouts=100,
-    max_depth=1000,
-    is_model_dynamic=True
+    rollouts=100
 )
 timesteps = 100
 verbose = False

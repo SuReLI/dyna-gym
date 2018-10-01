@@ -10,7 +10,6 @@ env.equality_operator(s1, s2)
 
 import random
 import itertools
-import numpy as np
 from gym import spaces as gspaces
 from math import sqrt, log
 from copy import copy
@@ -108,11 +107,22 @@ class MCTS(object):
                     if (len(node.children) == 0):
                         select = False # Selected a ChanceNode
                     else:
+                        new_state = True
                         for i in range(len(node.children)):
-                            if env.equality_operator(node.children[i].state,state_p):
+                            if env.equality_operator(node.children[i].state, state_p):
+                                node = node.children[i]
+                                new_state = False
+                                break
+                        if new_state:
+                            select = False # Selected a ChanceNode
+                        # OUTDATED
+                        '''
+                        for i in range(len(node.children)):
+                            if env.equality_operator(node.children[i].state, state_p):
                                 node = node.children[i]
                             else:
                                 select = False # Selected a ChanceNode
+                        '''
 
             # Expansion
             if (type(node) == ChanceNode) or ((type(node) == DecisionNode) and not node.is_terminal):
