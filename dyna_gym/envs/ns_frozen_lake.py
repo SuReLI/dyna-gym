@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+from random import randint
 from six import StringIO, b
 from gym import Env, spaces, utils
 from gym.envs.toy_text import discrete
@@ -27,6 +28,23 @@ MAPS = {
         "FFFHFFFG"
     ],
 }
+
+def random_map(map_size):
+    nR, nC = map_size
+    nH = int(0.2 * nR * nC) # Number of holes
+    m = []
+    for i in range(nR): # Generate ice floe
+        m.append(nC * ["F"])
+    m[0][0] = "S" # Generate start
+    m[-1][-1] = "G" # Generate goal
+    while nH > 0: # Generate holes
+        i, j = (randint(0, nR-1), randint(0, nC-1))
+        if m[i][j] is "F":
+            m[i][j] = "H"
+            nH -= 1
+    for i in range(nR): # Formating
+        m[i] = "".join(m[i])
+    return m
 
 def categorical_sample(prob_n, np_random):
     """
@@ -65,11 +83,14 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4", is_slippery=False):
+    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=False):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
-            desc = MAPS[map_name]
+            if map_name is "random":
+                desc = random_map(map_size)
+            else:
+                desc = MAPS[map_name]
         self.desc = desc = np.asarray(desc,dtype='c')
         self.nrow, self.ncol = nrow, ncol = desc.shape
 
