@@ -1,7 +1,6 @@
 import numpy as np
 import sys
 from six import StringIO, b
-
 from gym import Env, spaces, utils
 from gym.envs.toy_text import discrete
 

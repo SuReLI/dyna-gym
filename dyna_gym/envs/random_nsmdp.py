@@ -17,9 +17,9 @@ class RandomNSMDP(Env):
     }
 
     def __init__(self):
-        self.n_pos = 50
-        self.n_actions = 10
-        self.n_timestep = 110 # maximal number of timesteps
+        self.n_pos = 3
+        self.n_actions = 2
+        self.n_timestep = 100 # maximal number of timesteps
         self.pos_space = np.array(range(self.n_pos))
         self.action_space = spaces.Discrete(self.n_actions)
 
