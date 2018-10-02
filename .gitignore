@@ -6,3 +6,4 @@ log
 
 examples/uct_nativecartpole.py
 nsmdp-algorithms
+nsmdp_algorithms
