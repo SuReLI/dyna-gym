@@ -68,10 +68,11 @@ class MCTS(object):
     '''
     MCTS agent
     '''
-    def __init__(self, action_space, rollouts, gamma=0.9, is_model_dynamic=True):
+    def __init__(self, action_space, rollouts=100, horizon=100, gamma=0.9, is_model_dynamic=True):
         self.action_space = list(combinations(action_space))
         self.n_actions = len(self.action_space)
         self.rollouts = rollouts
+        self.horizon = horizon
         self.gamma = gamma
         self.is_model_dynamic = is_model_dynamic
 
@@ -132,7 +133,7 @@ class MCTS(object):
             t = 0
             estimate = reward
             state = node.state
-            while not terminal:
+            while (not terminal) and (t < self.horizon):
                 action = env.action_space.sample() # default policy
                 state, reward, terminal = env.transition(state, action, self.is_model_dynamic)
                 estimate += reward * (self.gamma**t)
