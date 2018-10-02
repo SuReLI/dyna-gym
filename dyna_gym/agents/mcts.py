@@ -14,17 +14,17 @@ from gym import spaces as gspaces
 from math import sqrt, log
 from copy import copy
 
-def decision_node_value(node):
-    '''
-    Value of a decision node
-    '''
-    return chance_node_value(max(node.children, key=chance_node_value))
-
 def chance_node_value(node):
     '''
     Value of a chance node
     '''
     return sum(node.sampled_returns) / len(node.sampled_returns)
+
+def decision_node_value(node):
+    '''
+    Value of a decision node
+    '''
+    return chance_node_value(max(node.children, key=chance_node_value))
 
 def combinations(space):
     if isinstance(space, gspaces.Discrete):
@@ -34,13 +34,13 @@ def combinations(space):
     else:
         raise NotImplementedError
 
-def mcts_tree_policy(children):
+def mcts_tree_policy(ag, children):
     return random.choice(children)
 
 def mcts_procedure(ag, tree_policy, env, done):
     '''
     Compute the entire MCTS procedure wrt to the selected tree policy.
-    Funciton tree_policy is a function taking a list of ChanceNodes as argument
+    Funciton tree_policy is a function taking an agent + a list of ChanceNodes as argument
     and returning the one chosen by the tree policy.
     '''
     root = DecisionNode(None, env.state, ag.action_space.copy(), done)
@@ -60,7 +60,7 @@ def mcts_procedure(ag, tree_policy, env, done):
                         select = False # Selected a non-fully-expanded DecisionNode
                     else:
                         #node = random.choice(node.children) #TODO remove
-                        node = tree_policy(node.children)
+                        node = tree_policy(ag, node.children)
             else: # ChanceNode
                 state_p, reward, terminal = env.transition(node.parent.state, node.action, ag.is_model_dynamic)
                 rewards.append(reward)

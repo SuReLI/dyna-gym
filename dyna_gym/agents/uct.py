@@ -10,10 +10,11 @@ env.equality_operator(s1, s2)
 
 import random
 import itertools
+import dyna_gym.agents.mcts as mcts
 from gym import spaces as gspaces
 from math import sqrt, log
 from copy import copy
-
+"""
 def decision_node_value(node):
     '''
     Value of a decision node
@@ -25,7 +26,7 @@ def chance_node_value(node):
     Value of a chance node
     '''
     return sum(node.sampled_returns) / len(node.sampled_returns)
-
+"""
 def combinations(space):
     if isinstance(space, gspaces.Discrete):
         return range(space.n)
@@ -34,6 +35,10 @@ def combinations(space):
     else:
         raise NotImplementedError
 
+def uct_tree_policy(ag, children):
+    return max(children, key=ag.ucb)
+
+"""
 class DecisionNode:
     '''
     Decision node class, labelled by a state
@@ -63,6 +68,7 @@ class ChanceNode:
         self.depth = parent.depth
         self.children = []
         self.sampled_returns = []
+"""
 
 class UCT(object):
     '''
@@ -87,11 +93,13 @@ class UCT(object):
         '''
         Upper Confidence Bound of a chance node
         '''
-        return chance_node_value(node) + self.ucb_constant * sqrt(log(node.parent.visits)/len(node.sampled_returns))
+        return mcts.chance_node_value(node) + self.ucb_constant * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
     def act(self, env, done):
         '''
         Compute the entire UCT procedure
+        '''
+        return mcts.mcts_procedure(self, uct_tree_policy, env, done)
         '''
         self.root = DecisionNode(None, env.state, self.action_space.copy(), done)
         for _ in range(self.rollouts):
@@ -158,3 +166,4 @@ class UCT(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         return max(self.root.children, key=chance_node_value).action
+        '''
