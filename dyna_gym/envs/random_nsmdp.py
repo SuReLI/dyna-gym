@@ -17,18 +17,18 @@ class RandomNSMDP(Env):
     }
 
     def __init__(self):
-        self.n_pos = 3
-        self.n_actions = 2
+        self.nS = 3
+        self.nA = 2
         self.n_timestep = 100 # maximal number of timesteps
-        self.pos_space = np.array(range(self.n_pos))
-        self.action_space = spaces.Discrete(self.n_actions)
+        self.pos_space = np.array(range(self.nS))
+        self.action_space = spaces.Discrete(self.nA)
 
         self.timestep = 1 # timestep duration
         self.L_p = 1 # transition kernel Lipschitz constant
         self.L_r = 10 # reward function Lipschitz constant
 
-        self.transition_matrix = self.generate_transition_matrix()
-        self.reward_matrix = self.generate_reward_matrix()
+        self.T = self.generate_transition_matrix()
+        self.R = self.generate_reward_matrix()
 
         #self._seed()
         self.viewer = None
@@ -46,11 +46,11 @@ class RandomNSMDP(Env):
         return [0, 0]
 
     def generate_transition_matrix(self):
-        T = np.zeros(shape=(self.n_pos, self.n_actions, self.n_timestep, self.n_pos), dtype=float)
-        for i in range(self.n_pos): # s
-            for j in range(self.n_actions): # a
+        T = np.zeros(shape=(self.nS, self.nA, self.n_timestep, self.nS), dtype=float)
+        for i in range(self.nS): # s
+            for j in range(self.nA): # a
                 # 1. Generate distribution for t=0
-                T[i,j,0,:] = distribution.random_tabular(size=self.n_pos)
+                T[i,j,0,:] = distribution.random_tabular(size=self.nS)
                 # 2. Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.n_timestep): # t
                     T[i,j,t,:] = distribution.random_constrained(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
@@ -65,7 +65,7 @@ class RandomNSMDP(Env):
         if (type(pos) == list):
             pos = pos[0]
         assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.transition_matrix[pos, a, t]
+        return self.T[pos, a, t]
 
     def transition_probability(self, s_p, s, t, a):
         '''
@@ -80,12 +80,12 @@ class RandomNSMDP(Env):
             pos_p = pos_p[0]
         assert(isinstance(pos,np.int64) or isinstance(pos, int))
         assert(isinstance(pos_p,np.int64) or isinstance(pos_p, int))
-        return self.transition_matrix[pos, a, t, pos_p]
+        return self.T[pos, a, t, pos_p]
 
     def generate_reward_matrix(self):
-        R = np.zeros(shape=(self.n_pos, self.n_actions, self.n_timestep), dtype=float)
-        for i in range(self.n_pos): # s
-            for j in range(self.n_actions): # a
+        R = np.zeros(shape=(self.nS, self.nA, self.n_timestep), dtype=float)
+        for i in range(self.nS): # s
+            for j in range(self.nA): # a
                 # 1. Generate instant reward for t=0
                 R[i,j,0] = np.random.random(size=None)
                 # 2. Build subsequent instant rewards st LC constraint is respected
@@ -106,7 +106,7 @@ class RandomNSMDP(Env):
         if (type(pos) == list):
             pos = pos[0]
         assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.reward_matrix[pos, a, t]
+        return self.R[pos, a, t]
 
     def equality_operator(self, s1, s2):
         '''
@@ -148,7 +148,7 @@ class RandomNSMDP(Env):
 
     def get_state_space_at_time(self, t):
         space = []
-        for i in range(self.n_pos):
+        for i in range(self.nS):
             space.append([self.pos_space[i], t])
         return space
 
