@@ -38,13 +38,13 @@ class OLUCT(object):
     '''
     OLUCT agent
     '''
-    def __init__(self, action_space, gamma, rollouts, max_depth, is_model_dynamic, ucb_constant):
+    def __init__(self, action_space, gamma=0.9, rollouts=100, max_depth=300, ucb_constant=6.36396103068, is_model_dynamic=True):
         self.action_space = action_space
         self.gamma = gamma
         self.rollouts = rollouts
         self.max_depth = max_depth
-        self.is_model_dynamic = is_model_dynamic
         self.ucb_constant = ucb_constant
+        self.is_model_dynamic = is_model_dynamic
 
     def reset(self):
         '''
