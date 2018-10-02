@@ -34,6 +34,82 @@ def combinations(space):
     else:
         raise NotImplementedError
 
+def mcts_tree_policy(children):
+    return random.choice(children)
+
+def mcts_procedure(ag, tree_policy, env, done):
+    '''
+    Compute the entire MCTS procedure wrt to the selected tree policy.
+    Funciton tree_policy is a function taking a list of ChanceNodes as argument
+    and returning the one chosen by the tree policy.
+    '''
+    root = DecisionNode(None, env.state, ag.action_space.copy(), done)
+    for _ in range(ag.rollouts):
+        rewards = [] # Rewards collected along the tree for the current rollout
+        node = root # Current node
+        terminal = done
+
+        # Selection
+        select = True
+        while select:
+            if (type(node) == DecisionNode): # DecisionNode
+                if node.is_terminal:
+                    select = False # Selected a terminal DecisionNode
+                else:
+                    if len(node.children) < ag.n_actions:
+                        select = False # Selected a non-fully-expanded DecisionNode
+                    else:
+                        #node = random.choice(node.children) #TODO remove
+                        node = tree_policy(node.children)
+            else: # ChanceNode
+                state_p, reward, terminal = env.transition(node.parent.state, node.action, ag.is_model_dynamic)
+                rewards.append(reward)
+                if (len(node.children) == 0):
+                    select = False # Selected a ChanceNode
+                else:
+                    new_state = True
+                    for i in range(len(node.children)):
+                        if env.equality_operator(node.children[i].state, state_p):
+                            node = node.children[i]
+                            new_state = False
+                            break
+                    if new_state:
+                        select = False # Selected a ChanceNode
+
+        # Expansion
+        if (type(node) == ChanceNode) or ((type(node) == DecisionNode) and not node.is_terminal):
+            if (type(node) == DecisionNode):
+                node.children.append(ChanceNode(node, node.possible_actions.pop()))
+                node = node.children[-1]
+                state_p, reward, terminal = env.transition(node.parent.state ,node.action, ag.is_model_dynamic)
+                rewards.append(reward)
+            # ChanceNode
+            node.children.append(DecisionNode(node, state_p, ag.action_space.copy(), terminal))
+            node = node.children[-1]
+
+        # Evaluation
+        assert(type(node) == DecisionNode)
+        t = 0
+        estimate = reward
+        state = node.state
+        while (not terminal) and (t < ag.horizon):
+            action = env.action_space.sample() # default policy
+            state, reward, terminal = env.transition(state, action, ag.is_model_dynamic)
+            estimate += reward * (ag.gamma**t)
+            t += 1
+
+        # Backpropagation
+        node.visits += 1
+        node = node.parent
+        assert(type(node) == ChanceNode)
+        while node:
+            node.sampled_returns.append(estimate)
+            if len(rewards) != 0:
+                estimate = rewards.pop() + ag.gamma * estimate
+            node.parent.visits += 1
+            node = node.parent.parent
+    return max(root.children, key=chance_node_value).action
+
 class DecisionNode:
     '''
     Decision node class, labelled by a state
@@ -81,9 +157,12 @@ class MCTS(object):
         Reset Agent's attributes.
         Nothing to reset for MCTS agent.
         '''
+
     def act(self, env, done):
         '''
         Compute the entire MCTS procedure
+        '''
+        return mcts_procedure(self, mcts_tree_policy, env, done)
         '''
         root = DecisionNode(None, env.state, self.action_space.copy(), done)
         for _ in range(self.rollouts):
@@ -150,3 +229,4 @@ class MCTS(object):
                 node.parent.visits += 1
                 node = node.parent.parent
         return max(root.children, key=chance_node_value).action
+        '''
