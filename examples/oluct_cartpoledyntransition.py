@@ -9,8 +9,8 @@ agent = oluct.OLUCT(
     gamma=0.9,
     rollouts=100,
     max_depth=1000,
-    is_model_dynamic=True,
-    ucb_constant=0.707
+    ucb_constant=6.36396103068,
+    is_model_dynamic=True
 )
 timesteps = 100
 verbose = False
