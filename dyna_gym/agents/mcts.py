@@ -115,14 +115,6 @@ class MCTS(object):
                                 break
                         if new_state:
                             select = False # Selected a ChanceNode
-                        # OUTDATED
-                        '''
-                        for i in range(len(node.children)):
-                            if env.equality_operator(node.children[i].state, state_p):
-                                node = node.children[i]
-                            else:
-                                select = False # Selected a ChanceNode
-                        '''
 
             # Expansion
             if (type(node) == ChanceNode) or ((type(node) == DecisionNode) and not node.is_terminal):
@@ -132,7 +124,6 @@ class MCTS(object):
                     state_p, reward, terminal = env.transition(node.parent.state ,node.action, self.is_model_dynamic)
                     rewards.append(reward)
                 # ChanceNode
-                assert(type(node) == ChanceNode) #TODO remove
                 node.children.append(DecisionNode(node, state_p, self.action_space.copy(), terminal))
                 node = node.children[-1]
 
