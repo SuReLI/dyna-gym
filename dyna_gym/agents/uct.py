@@ -132,7 +132,6 @@ class UCT(object):
                     state_p, reward, terminal = env.transition(node.parent.state ,node.action, self.is_model_dynamic)
                     rewards.append(reward)
                 # ChanceNode
-                assert(type(node) == ChanceNode) #TODO remove
                 node.children.append(DecisionNode(node, state_p, self.action_space.copy(), terminal))
                 node = node.children[-1]
 
@@ -157,39 +156,4 @@ class UCT(object):
                     estimate = rewards.pop() + self.gamma * estimate
                 node.parent.visits += 1
                 node = node.parent.parent
-
-            '''
-            if expand_chance_node and (type(node) == ChanceNode): # Expand a chance node
-                node.children.append(DecisionNode(node, state_p, terminal))
-                node = node.children[-1]
-            if (type(node) == DecisionNode): # Expand a decision node
-                if terminal:
-                    node = node.parent
-                else:
-                    node.children = [ChanceNode(node, a) for a in combinations(env.action_space)]
-                    random.shuffle(node.children)
-                    child = node.children[0]
-                    node.explored_children += 1
-                    node = child
-
-            # Evaluation
-            t = 0
-            estimate = 0
-            state = node.parent.state
-            while not terminal:
-                action = env.action_space.sample() # default policy
-                state, reward, terminal = env.transition(state,action,self.is_model_dynamic)
-                estimate += reward * (self.gamma**t)
-                t += 1
-                if node.depth + t > self.max_depth:
-                    break
-
-            # Backpropagation
-            while node:
-                node.sampled_returns.append(estimate)
-                if len(rewards) != 0:
-                    estimate = rewards.pop() + self.gamma * estimate
-                node.parent.visits += 1
-                node = node.parent.parent
-            '''
         return max(self.root.children, key=chance_node_value).action
