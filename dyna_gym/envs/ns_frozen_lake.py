@@ -83,7 +83,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=False):
+    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -211,28 +211,29 @@ class NSFrozenLakeEnv(Env):
                     T[i,j,t,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
         return T
 
-    def transition_probability_distribution(self, p, t, a):
-        '''
-        Return the distribution of the transition probability conditionned by (p, t, a)
-        If a full state (time-enhanced) is provided as argument , only the position is used
-        '''
+    def transition_probability_distribution(self, s, t, a):
+        p = s
+        if (type(p) == tuple):
+            p = p[0]
+        assert(isinstance(p, np.int64) or isinstance(p, int))
         assert(p < self.nS)
         assert(t < self.nT)
         assert(a < self.nA)
-        assert(isinstance(p, np.int64) or isinstance(p, int))
         return self.T[p, a, t]
 
-    def transition_probability(self, p_p, p, t, a):
-        '''
-        Return the probability of transition to position p_p conditionned by (p, t, a)
-        If a full state (time-enhanced) is provided as argument , only the position is used
-        '''
+    def transition_probability(self, s_p, s, t, a):
+        p = s
+        p_p = s_p
+        if (type(p) == tuple):
+            p = p[0]
+        if (type(p_p) == tuple):
+            p_p = p_p[0]
+        assert(isinstance(p, np.int64) or isinstance(p, int))
+        assert(isinstance(p_p,np.int64) or isinstance(p_p, int))
         assert(p_p < self.nS)
         assert(p < self.nS)
         assert(t < self.nT)
         assert(a < self.nA)
-        assert(isinstance(p, np.int64) or isinstance(p, int))
-        assert(isinstance(p_p,np.int64) or isinstance(p_p, int))
         return self.T[p, a, t, p_p]
 
     def is_terminal(self, s):
@@ -240,7 +241,7 @@ class NSFrozenLakeEnv(Env):
         p = s[0]
         row, col = self.to_m(p)
         letter = self.desc[row, col]
-        return bytes(newletter) in b'GH'
+        return bytes(letter) in b'GH'
 
     def get_time(self):
         return self.state[1]
@@ -272,6 +273,17 @@ class NSFrozenLakeEnv(Env):
             t += 1
         s_p = (p_p, t)
         return s_p, r, done
+
+    #TODO def get_position(s):
+
+    def reward(self, s, t, a):
+        r = 0
+        d = self.transition_probability_distribution(s, t, a)
+        for i in range(len(d)):
+            row, col = self.to_m(i)
+            ri = float(self.desc[row, col] == b'G')
+            r += ri * d[i]
+        return r
 
     def _step(self, a):
         s, r, d = self.transition(self.state, a, True)
