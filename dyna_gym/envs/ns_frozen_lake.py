@@ -120,49 +120,14 @@ class NSFrozenLakeEnv(Env):
         isd = np.array(desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
 
-        # TRM P[s][a] == [(probability, nextstate, reward, done), ... for each a]
-        #P = {s : {a : [] for a in range(nA)} for s in range(nS)}
-
-        # TRM Fill P
-        '''
-        for row in range(nrow):
-            for col in range(ncol):
-                s = to_s(row, col)
-                for a in range(4):
-                    li = P[s][a]
-                    letter = desc[row, col]
-                    if letter in b'GH': # is terminal
-                        li.append((1.0, s, 0, True))
-                    else:
-                        if is_slippery:
-                            for b in [(a-1)%4, a, (a+1)%4]: # for each action 'close' to a
-                                newrow, newcol = inc(row, col, b)
-                                newstate = to_s(newrow, newcol)
-                                newletter = desc[newrow, newcol]
-                                done = bytes(newletter) in b'GH'
-                                rew = float(newletter == b'G')
-                                li.append((1.0/3.0, newstate, rew, done))
-                        else:
-                            newrow, newcol = inc(row, col, a)
-                            newstate = to_s(newrow, newcol)
-                            newletter = desc[newrow, newcol]
-                            done = bytes(newletter) in b'GH'
-                            rew = float(newletter == b'G')
-                            li.append((1.0, newstate, rew, done))
-        '''
-
-        #super(NSFrozenLakeEnv, self).__init__(nS, nA, P, isd)#TRM
-        #self.P = P #TRM
-
-        self.lastaction=None # for rendering
         self._seed()
-        self._reset()
+        self.reset()
 
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
         return [seed]
 
-    def _reset(self):
+    def reset(self):
         self.state = (categorical_sample(self.isd, self.np_random), 0) # (position, time)
         self.lastaction=None # for rendering
         return self.state
@@ -187,10 +152,6 @@ class NSFrozenLakeEnv(Env):
         return row, col
 
     def reachable_states(self, s, a):
-        assert(s >= 0) #TRM
-        assert(a >= 0) #TRM
-        assert(s < self.nS) #TRM
-        assert(a < self.nA) #TRM
         rs = np.zeros(shape=self.nS, dtype=int)
         row, col = self.to_m(s)
         if self.is_slippery:
@@ -257,8 +218,7 @@ class NSFrozenLakeEnv(Env):
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
         '''
-        #transitions = self.P[s][a]#TRM
-        p, t = s # (position, time)
+        p, t = s
         d = self.transition_probability_distribution(p, t, a)
         p_p = categorical_sample(d, self.np_random)
         newrow, newcol = self.to_m(p_p)

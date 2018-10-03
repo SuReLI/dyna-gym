@@ -97,33 +97,16 @@ class CartPoleDynamicRewardV2(gym.Env):
         state_p = (x, x_dot, theta, theta_dot, time)
         # Termination criterion
         self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
-        ''' #TODO put back
         done =  x < -self.x_threshold \
                 or x > self.x_threshold \
                 or theta < -self.theta_magnitude + self.delta \
                 or theta > self.theta_magnitude + self.delta
-        '''
-        done =  theta < -self.theta_magnitude + self.delta \
-                or theta > self.theta_magnitude + self.delta #TRM
         done = bool(done)
 
         if not done:
             reward = 1.0
         else:
             reward = 0.0
-        '''
-        elif self.steps_beyond_done is None:
-            # Pole just fell!
-            self.steps_beyond_done = 0
-            reward = 1.0
-        else:
-            if self.steps_beyond_done == 0:
-                logger.warning("You are calling 'step()' even though this environment has \
-                already returned done = True. You should always call 'reset()' once you \
-                receive 'done = True' -- any further steps are undefined behavior.")
-            self.steps_beyond_done += 1
-            reward = 0.0
-        '''
         return state_p, reward, done
 
     def step(self, action):
