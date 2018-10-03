@@ -128,7 +128,10 @@ class RandomNSMDP(Env):
         if is_model_dynamic:
             time_p += self.timestep
         state_p = [int(position_p), time_p]
-        done = False # Termination criterion
+        if t >= self.nT - 1: # Timeout
+            done = True
+        else:
+            done = False
         return state_p, reward, done
 
     def step(self, action):

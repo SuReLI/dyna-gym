@@ -248,12 +248,15 @@ class NSFrozenLakeEnv(Env):
         #transitions = self.P[s][a]#TRM
         assert(type(s) == tuple) #TRM
         p, t = s # (position, time)
+        print(t)
         d = self.transition_probability_distribution(p, t, a)
         p_p = categorical_sample(d, self.np_random)
         newrow, newcol = self.to_m(p_p)
         newletter = self.desc[newrow, newcol]
         done = bytes(newletter) in b'GH'
         r = float(newletter == b'G')
+        if t >= self.nT - 1: # Timeout
+            done = True
         if is_model_dynamic:
             t += 1
         s_p = (p_p, t)
