@@ -79,7 +79,6 @@ class NSFrozenLakeEnv(Env):
 
     The episode ends when you reach the goal or fall in a hole.
     You receive a reward of 1 if you reach the goal, and zero otherwise.
-
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
@@ -97,7 +96,7 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 10 # n timesteps
+        self.nT = 11 # n timesteps
 
         self.timestep = 1 # timestep duration
         self.L_p = 0.1 # transition kernel Lipschitz constant
@@ -109,9 +108,6 @@ class NSFrozenLakeEnv(Env):
 
         self.is_slippery = is_slippery
         self.T = self.generate_transition_matrix()
-
-        print(self.T.shape)
-        print(self.T[0][0][0])
 
         isd = np.array(desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
@@ -153,15 +149,14 @@ class NSFrozenLakeEnv(Env):
         self.lastaction=None # for rendering
         self._seed()
         self._reset()
-        exit() #TRM
 
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
         return [seed]
 
     def _reset(self):
-        self.state = categorical_sample(self.isd, self.np_random)
-        self.lastaction=None
+        self.state = (categorical_sample(self.isd, self.np_random), 0) # (position, time)
+        self.lastaction=None # for rendering
         return self.state
 
     def inc(self, row, col, a):
@@ -209,7 +204,6 @@ class NSFrozenLakeEnv(Env):
                 d = distribution.random_tabular(size=nrs)
                 dc = list(d.copy())
                 T[i,j,0,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
-                print(T[i,j,0,:])
                 # Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.nT): # t
                     d = distribution.random_constrained(d, self.L_p * self.timestep)
@@ -217,37 +211,31 @@ class NSFrozenLakeEnv(Env):
                     T[i,j,t,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
         return T
 
-    """ TODO
-    def transition_probability_distribution(self, s, t, a):
+    def transition_probability_distribution(self, p, t, a):
         '''
-        Return the distribution of the transition probability conditionned by (s, t, a)
+        Return the distribution of the transition probability conditionned by (p, t, a)
         If a full state (time-enhanced) is provided as argument , only the position is used
         '''
-        pos = s
-        if (type(pos) == list):
-            pos = pos[0]
-        assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.T[pos, a, t]
+        assert(p < self.nS)
+        assert(t < self.nT)
+        assert(a < self.nA)
+        assert(isinstance(p, np.int64) or isinstance(p, int))
+        return self.T[p, a, t]
 
-    def transition_probability(self, s_p, s, t, a):
+    def transition_probability(self, p_p, p, t, a):
         '''
-        Return the probability of transition to s_p conditionned by (s, t, a)
+        Return the probability of transition to position p_p conditionned by (p, t, a)
         If a full state (time-enhanced) is provided as argument , only the position is used
         '''
-        pos = s
-        pos_p = s_p
-        if (type(pos) == list):
-            pos = pos[0]
-        if (type(pos_p) == list):
-            pos_p = pos_p[0]
-        assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        assert(isinstance(pos_p,np.int64) or isinstance(pos_p, int))
-        return self.T[pos, a, t, pos_p]
-    """
+        assert(p_p < self.nS)
+        assert(p < self.nS)
+        assert(t < self.nT)
+        assert(a < self.nA)
+        assert(isinstance(p, np.int64) or isinstance(p, int))
+        assert(isinstance(p_p,np.int64) or isinstance(p_p, int))
+        return self.T[p, a, t, p_p]
+
     def equality_operator(self, s1, s2):
-        '''
-        Equality operator, return True if the two input states are equal.
-        '''
         return (s1 == s2)
 
     def transition(self, s, a, is_model_dynamic=True):
@@ -257,10 +245,19 @@ class NSFrozenLakeEnv(Env):
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
         '''
-        transitions = self.P[s][a]
-        i = categorical_sample([t[0] for t in transitions], self.np_random)
-        p, s, r, d = transitions[i]
-        return s, r, d
+        #transitions = self.P[s][a]#TRM
+        assert(type(s) == tuple) #TRM
+        p, t = s # (position, time)
+        d = self.transition_probability_distribution(p, t, a)
+        p_p = categorical_sample(d, self.np_random)
+        newrow, newcol = self.to_m(p_p)
+        newletter = self.desc[newrow, newcol]
+        done = bytes(newletter) in b'GH'
+        r = float(newletter == b'G')
+        if is_model_dynamic:
+            t += 1
+        s_p = (p_p, t)
+        return s_p, r, done
 
     def _step(self, a):
         s, r, d = self.transition(self.state, a, True)
@@ -273,7 +270,7 @@ class NSFrozenLakeEnv(Env):
             return
         outfile = StringIO() if mode == 'ansi' else sys.stdout
 
-        row, col = self.state // self.ncol, self.state % self.ncol
+        row, col = self.state[0] // self.ncol, self.state[0] % self.ncol
         desc = self.desc.tolist()
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)

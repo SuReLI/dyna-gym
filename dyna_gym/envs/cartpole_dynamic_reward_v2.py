@@ -64,6 +64,12 @@ class CartPoleDynamicRewardV2(gym.Env):
                 return False
         return True
 
+    def reset(self):
+        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
+        self.state = np.append(self.state,0.0) # time
+        self.steps_beyond_done = None
+        return np.array(self.state)
+
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -132,12 +138,6 @@ class CartPoleDynamicRewardV2(gym.Env):
 
     def print_state(self):
         print('x: {:.5f}; x_dot: {:.5f}; theta: {:.5f}; theta_dot: {:.5f}'.format(self.state[0],self.state[1],self.state[2],self.state[3]))
-
-    def reset(self):
-        self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
-        self.state = np.append(self.state,0.0) # time
-        self.steps_beyond_done = None
-        return np.array(self.state)
 
     def render(self, mode='human', close=False):
         if close:
