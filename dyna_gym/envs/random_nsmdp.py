@@ -30,20 +30,17 @@ class RandomNSMDP(Env):
         self.T = self.generate_transition_matrix()
         self.R = self.generate_reward_matrix()
 
-        #self._seed()
+        self._seed()
+        self.reset()
         self.viewer = None
-        self.state = self.initial_state()
-        self.steps_beyond_done = None
 
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
         return [seed]
 
-    def initial_state(self):
-        '''
-        Initial state is [position=0, time=0]
-        '''
-        return [0, 0]
+    def reset(self):
+        self.state = (0, 0)
+        self.steps_beyond_done = None
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
@@ -61,26 +58,26 @@ class RandomNSMDP(Env):
         Return the distribution of the transition probability conditionned by (s, t, a)
         If a full state (time-enhanced) is provided as argument , only the position is used
         '''
-        pos = s
-        if (type(pos) == list):
-            pos = pos[0]
-        assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.T[pos, a, t]
+        p = s
+        if (type(p) == tuple):
+            p = p[0]
+        assert(isinstance(p, np.int64) or isinstance(p, int))
+        return self.T[p, a, t]
 
     def transition_probability(self, s_p, s, t, a):
         '''
         Return the probability of transition to s_p conditionned by (s, t, a)
         If a full state (time-enhanced) is provided as argument , only the position is used
         '''
-        pos = s
-        pos_p = s_p
-        if (type(pos) == list):
-            pos = pos[0]
-        if (type(pos_p) == list):
-            pos_p = pos_p[0]
-        assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        assert(isinstance(pos_p,np.int64) or isinstance(pos_p, int))
-        return self.T[pos, a, t, pos_p]
+        p = s
+        p_p = s_p
+        if (type(p) == tuple):
+            p = p[0]
+        if (type(p_p) == tuple):
+            p_p = p_p[0]
+        assert(isinstance(p, np.int64) or isinstance(p, int))
+        assert(isinstance(p_p, np.int64) or isinstance(p_p, int))
+        return self.T[p, a, t, p_p]
 
     def generate_reward_matrix(self):
         R = np.zeros(shape=(self.nS, self.nA, self.nT), dtype=float)
@@ -102,11 +99,11 @@ class RandomNSMDP(Env):
         Return the instant reward r(s, t, a)
         If a full state (time-enhanced) is provided as argument , only the position is used
         '''
-        pos = s
-        if (type(pos) == list):
-            pos = pos[0]
-        assert(isinstance(pos,np.int64) or isinstance(pos, int))
-        return self.R[pos, a, t]
+        p = s
+        if (type(p) == tuple):
+            p = p[0]
+        assert(isinstance(p,np.int64) or isinstance(p, int))
+        return self.R[p, a, t]
 
     def equality_operator(self, s1, s2):
         '''
@@ -121,13 +118,13 @@ class RandomNSMDP(Env):
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
         '''
-        position_p, time_p = self.state
-        reward = self.reward(position_p, time_p, action)
-        transition_model = self.transition_probability_distribution(position_p, time_p, action)
-        position_p = np.random.choice(self.pos_space, size=None, replace=False, p=transition_model)
+        p_p, t = self.state
+        reward = self.reward(p_p, t, action)
+        transition_model = self.transition_probability_distribution(p_p, t, action)
+        p_p = np.random.choice(self.pos_space, size=None, replace=False, p=transition_model)
         if is_model_dynamic:
-            time_p += self.timestep
-        state_p = [int(position_p), time_p]
+            t += self.timestep
+        state_p = (int(p_p), t)
         if t >= self.nT - 1: # Timeout
             done = True
         else:
@@ -150,18 +147,10 @@ class RandomNSMDP(Env):
         print('position: {}; t: {}'.format(self.state[0],self.state[1]))
 
     def get_state_space_at_time(self, t):
-        space = []
-        for i in range(self.nS):
-            space.append([self.pos_space[i], t])
-        return space
+        return [(x, t) for x in self.pos_space]
 
     def get_time(self):
         return self.state[1]
-
-    def reset(self):
-        self.state = self.initial_state()
-        self.steps_beyond_done = None
-        return self.state
 
     def render(self, mode='human', close=False):
         '''
