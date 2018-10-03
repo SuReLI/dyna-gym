@@ -10,6 +10,14 @@ from gym import Env, error, spaces, utils
 
 logger = logging.getLogger(__name__)
 
+def get_position(s):
+    if (type(s) == tuple):
+        p = s[0]
+    else:
+        p = s
+    assert(isinstance(p, np.int64) or isinstance(p, int))
+    return p
+
 class RandomNSMDP(Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
@@ -54,29 +62,12 @@ class RandomNSMDP(Env):
         return T
 
     def transition_probability_distribution(self, s, t, a):
-        '''
-        Return the distribution of the transition probability conditionned by (s, t, a)
-        If a full state (time-enhanced) is provided as argument , only the position is used
-        '''
-        p = s
-        if (type(p) == tuple):
-            p = p[0]
-        assert(isinstance(p, np.int64) or isinstance(p, int))
+        p = get_position(s)
         return self.T[p, a, t]
 
     def transition_probability(self, s_p, s, t, a):
-        '''
-        Return the probability of transition to s_p conditionned by (s, t, a)
-        If a full state (time-enhanced) is provided as argument , only the position is used
-        '''
-        p = s
-        p_p = s_p
-        if (type(p) == tuple):
-            p = p[0]
-        if (type(p_p) == tuple):
-            p_p = p_p[0]
-        assert(isinstance(p, np.int64) or isinstance(p, int))
-        assert(isinstance(p_p, np.int64) or isinstance(p_p, int))
+        p = get_position(s)
+        p_p = get_position(s_p)
         return self.T[p, a, t, p_p]
 
     def generate_reward_matrix(self):
@@ -95,15 +86,7 @@ class RandomNSMDP(Env):
         return R
 
     def reward(self, s, t, a):
-        '''
-        Return the instant reward r(s, t, a)
-        If a full state (time-enhanced) is provided as argument , only the position is used
-        '''
-        p = s
-        if (type(p) == tuple):
-            p = p[0]
-        assert(isinstance(p,np.int64) or isinstance(p, int))
-        return self.R[p, a, t]
+        return self.R[get_position(s), a, t]
 
     def equality_operator(self, s1, s2):
         '''

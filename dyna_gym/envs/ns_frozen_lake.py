@@ -56,6 +56,14 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
+def get_position(s):
+    if (type(s) == tuple):
+        p = s[0]
+    else:
+        p = s
+    assert(isinstance(p, np.int64) or isinstance(p, int))
+    return p
+
 class NSFrozenLakeEnv(Env):
     """
     Winter is here. You and your friends were tossing around a frisbee at the park
@@ -212,24 +220,15 @@ class NSFrozenLakeEnv(Env):
         return T
 
     def transition_probability_distribution(self, s, t, a):
-        p = s
-        if (type(p) == tuple):
-            p = p[0]
-        assert(isinstance(p, np.int64) or isinstance(p, int))
+        p = get_position(s)
         assert(p < self.nS)
         assert(t < self.nT)
         assert(a < self.nA)
         return self.T[p, a, t]
 
     def transition_probability(self, s_p, s, t, a):
-        p = s
-        p_p = s_p
-        if (type(p) == tuple):
-            p = p[0]
-        if (type(p_p) == tuple):
-            p_p = p_p[0]
-        assert(isinstance(p, np.int64) or isinstance(p, int))
-        assert(isinstance(p_p,np.int64) or isinstance(p_p, int))
+        p = get_position(s)
+        p_p = get_position(s_p)
         assert(p_p < self.nS)
         assert(p < self.nS)
         assert(t < self.nT)
@@ -237,8 +236,7 @@ class NSFrozenLakeEnv(Env):
         return self.T[p, a, t, p_p]
 
     def is_terminal(self, s):
-        assert(type(s) == tuple)
-        p = s[0]
+        p = get_position(s)
         row, col = self.to_m(p)
         letter = self.desc[row, col]
         return bytes(letter) in b'GH'
@@ -273,8 +271,6 @@ class NSFrozenLakeEnv(Env):
             t += 1
         s_p = (p_p, t)
         return s_p, r, done
-
-    #TODO def get_position(s):
 
     def reward(self, s, t, a):
         r = 0
