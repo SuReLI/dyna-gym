@@ -83,7 +83,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=False):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -235,6 +235,13 @@ class NSFrozenLakeEnv(Env):
         assert(isinstance(p_p,np.int64) or isinstance(p_p, int))
         return self.T[p, a, t, p_p]
 
+    def is_terminal(self, s):
+        assert(type(s) == tuple)
+        p = s[0]
+        row, col = self.to_m(p)
+        letter = self.desc[row, col]
+        return bytes(newletter) in b'GH'
+
     def equality_operator(self, s1, s2):
         return (s1 == s2)
 
@@ -246,9 +253,7 @@ class NSFrozenLakeEnv(Env):
         to the state vector or not.
         '''
         #transitions = self.P[s][a]#TRM
-        assert(type(s) == tuple) #TRM
         p, t = s # (position, time)
-        print(t)
         d = self.transition_probability_distribution(p, t, a)
         p_p = categorical_sample(d, self.np_random)
         newrow, newcol = self.to_m(p_p)
