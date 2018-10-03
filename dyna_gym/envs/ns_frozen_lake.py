@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import dyna_gym.utils.distribution as distribution
 from random import randint
 from six import StringIO, b
 from gym import Env, spaces, utils
@@ -83,7 +84,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=False):
+    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -94,29 +95,32 @@ class NSFrozenLakeEnv(Env):
         self.desc = desc = np.asarray(desc,dtype='c')
         self.nrow, self.ncol = nrow, ncol = desc.shape
 
-        nA = 4
-        nS = nrow * ncol
+        self.nS = nrow * ncol # n states
+        self.nA = 4 # n actions
+        self.nT = 10 # n timesteps
 
-        isd = np.array(desc == b'S').astype('float64').ravel() # initial state distribution
-        isd /= isd.sum()
+        self.timestep = 1 # timestep duration
+        self.L_p = 1 # transition kernel Lipschitz constant
+        self.L_r = 10 # reward function Lipschitz constant
 
-        P = {s : {a : [] for a in range(nA)} for s in range(nS)} # P[s][a] == [(probability, nextstate, reward, done), ...]
+        self.action_space = spaces.Discrete(self.nA)
+        self.pos_space = np.array(range(self.nS))
+        self.observation_space = spaces.Discrete(self.nS)
 
-        def to_s(row, col):
-            return row*ncol + col
+        self.is_slippery = is_slippery
+        self.T = self.generate_transition_matrix()
 
-        def inc(row, col, a):
-            if a==0: # left
-                col = max(col-1,0)
-            elif a==1: # down
-                row = min(row+1,nrow-1)
-            elif a==2: # right
-                col = min(col+1,ncol-1)
-            elif a==3: # up
-                row = max(row-1,0)
-            return (row, col)
+        print(self.T.shape)
+        print(self.T[0][0][0])
 
-        # fill P
+        isd = np.array(desc == b'S').astype('float64').ravel() # Initial state distribution
+        self.isd = isd / isd.sum()
+
+        # TRM P[s][a] == [(probability, nextstate, reward, done), ... for each a]
+        #P = {s : {a : [] for a in range(nA)} for s in range(nS)}
+
+        # TRM Fill P
+        '''
         for row in range(nrow):
             for col in range(ncol):
                 s = to_s(row, col)
@@ -141,19 +145,15 @@ class NSFrozenLakeEnv(Env):
                             done = bytes(newletter) in b'GH'
                             rew = float(newletter == b'G')
                             li.append((1.0, newstate, rew, done))
+        '''
 
-        #super(NSFrozenLakeEnv, self).__init__(nS, nA, P, isd)
-        self.P = P
-        self.isd = isd
+        #super(NSFrozenLakeEnv, self).__init__(nS, nA, P, isd)#TRM
+        #self.P = P #TRM
+
         self.lastaction=None # for rendering
-        self.nS = nS
-        self.nA = nA
-
-        self.action_space = spaces.Discrete(self.nA)
-        self.observation_space = spaces.Discrete(self.nS)
-
         self._seed()
         self._reset()
+        exit() #TRM
 
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
@@ -164,6 +164,81 @@ class NSFrozenLakeEnv(Env):
         self.lastaction=None
         return self.state
 
+    def inc(self, row, col, a):
+        if a==0: # left
+            col = max(col-1,0)
+        elif a==1: # down
+            row = min(row+1,self.nrow-1)
+        elif a==2: # right
+            col = min(col+1,self.ncol-1)
+        elif a==3: # up
+            row = max(row-1,0)
+        return (row, col)
+
+    def to_s(self, row, col):
+        return row * self.ncol + col
+
+    def to_m(self, s):
+        row = int(s / self.ncol)
+        col = s - row * self.ncol
+        return row, col
+
+    def reachable_states(self, s, a):
+        assert(s >= 0) #TRM
+        assert(a >= 0) #TRM
+        assert(s < self.nS) #TRM
+        assert(a < self.nA) #TRM
+        rs = np.zeros(shape=self.nS, dtype=int)
+        row, col = self.to_m(s)
+        if self.is_slippery:
+            for b in [(a-1)%4, a, (a+1)%4]:
+                newrow, newcol = self.inc(row, col, b)
+                rs[self.to_s(newrow, newcol)] = 1
+        else:
+            newrow, newcol = self.inc(row, col, a)
+            rs[self.to_s(newrow, newcol)] = 1
+        return rs
+
+    def generate_transition_matrix(self):
+        T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
+        for i in range(self.nS): # s
+            for j in range(self.nA): # a
+                # 1. Generate distribution for t=0
+                reach = self.reachable_states(i, j)
+                print(reach)
+                exit()
+                T[i,j,0,:] = distribution.random_tabular(size=self.nS)
+                # 2. Build subsequent distributions st LC constraint is respected
+                for t in range(1, self.nT): # t
+                    T[i,j,t,:] = distribution.random_constrained(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
+        return T
+    """ TODO
+    def transition_probability_distribution(self, s, t, a):
+        '''
+        Return the distribution of the transition probability conditionned by (s, t, a)
+        If a full state (time-enhanced) is provided as argument , only the position is used
+        '''
+        pos = s
+        if (type(pos) == list):
+            pos = pos[0]
+        assert(isinstance(pos,np.int64) or isinstance(pos, int))
+        return self.T[pos, a, t]
+
+    def transition_probability(self, s_p, s, t, a):
+        '''
+        Return the probability of transition to s_p conditionned by (s, t, a)
+        If a full state (time-enhanced) is provided as argument , only the position is used
+        '''
+        pos = s
+        pos_p = s_p
+        if (type(pos) == list):
+            pos = pos[0]
+        if (type(pos_p) == list):
+            pos_p = pos_p[0]
+        assert(isinstance(pos,np.int64) or isinstance(pos, int))
+        assert(isinstance(pos_p,np.int64) or isinstance(pos_p, int))
+        return self.T[pos, a, t, pos_p]
+    """
     def equality_operator(self, s1, s2):
         '''
         Equality operator, return True if the two input states are equal.
