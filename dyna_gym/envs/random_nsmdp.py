@@ -17,9 +17,9 @@ class RandomNSMDP(Env):
     }
 
     def __init__(self):
-        self.nS = 3
-        self.nA = 2
-        self.n_timestep = 100 # maximal number of timesteps
+        self.nS = 3 # n states
+        self.nA = 2 # n actions
+        self.nT = 100 # n timesteps
         self.pos_space = np.array(range(self.nS))
         self.action_space = spaces.Discrete(self.nA)
 
@@ -46,14 +46,14 @@ class RandomNSMDP(Env):
         return [0, 0]
 
     def generate_transition_matrix(self):
-        T = np.zeros(shape=(self.nS, self.nA, self.n_timestep, self.nS), dtype=float)
+        T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
         for i in range(self.nS): # s
             for j in range(self.nA): # a
                 # 1. Generate distribution for t=0
                 T[i,j,0,:] = distribution.random_tabular(size=self.nS)
                 # 2. Build subsequent distributions st LC constraint is respected
-                for t in range(1, self.n_timestep): # t
-                    T[i,j,t,:] = distribution.random_constrained(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
+                for t in range(1, self.nT): # t
+                    T[i,j,t,:] = distribution.random_constrained(T[i,j,t-1,:], self.L_p * self.timestep)
         return T
 
     def transition_probability_distribution(self, s, t, a):
@@ -83,13 +83,13 @@ class RandomNSMDP(Env):
         return self.T[pos, a, t, pos_p]
 
     def generate_reward_matrix(self):
-        R = np.zeros(shape=(self.nS, self.nA, self.n_timestep), dtype=float)
+        R = np.zeros(shape=(self.nS, self.nA, self.nT), dtype=float)
         for i in range(self.nS): # s
             for j in range(self.nA): # a
                 # 1. Generate instant reward for t=0
                 R[i,j,0] = np.random.random(size=None)
                 # 2. Build subsequent instant rewards st LC constraint is respected
-                for t in range(1, self.n_timestep): # t
+                for t in range(1, self.nT): # t
                     R[i,j,t] = R[i,j,t-1] + self.L_r * self.timestep * (2 * np.random.random(size=None) - 1)
                     if R[i,j,t] > 1:
                         R[i,j,t] = 1

@@ -9,21 +9,22 @@ def random_tabular(size):
     '''
     Generate a 1D numpy array whose coefficients sum to 1
     '''
-    u_weights = np.random.random(size)
-    return u_weights / np.sum(u_weights)
+    w = np.random.random(size)
+    return w / np.sum(w)
 
-def random_constrained(u_values, u_weights, maxdist):
+def random_constrained(u, maxdist):
     '''
     Randomly generate a new distribution st the Wasserstein distance between the input
     distribution u and the generated distribution is smaller than the input maxdist.
-    Notice that the generated distribution has the same values as the input distribution.
+    Notice that the generated distribution has the same support as the input distribution.
     '''
-    max_n_trial = 100 # Maximum number of trials
-    v_weights = random_tabular(u_values.size)
+    max_n_trial = int(1e4) # Maximum number of trials
+    val = np.asarray(range(len(u)))
+    v = random_tabular(val.size)
     for i in range(max_n_trial):
-        if wasserstein_distance(u_values,u_values,u_weights,v_weights) <= maxdist:
-            return v_weights
+        if wasserstein_distance(val,val,u,v) <= maxdist:
+            return v
         else:
-            v_weights = random_tabular(u_values.size)
+            v = random_tabular(val.size)
     print('Failed to generate constrained distribution after {} trials'.format(max_n_trial))
     exit()
