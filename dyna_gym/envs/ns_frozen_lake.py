@@ -242,6 +242,12 @@ class NSFrozenLakeEnv(Env):
         letter = self.desc[row, col]
         return bytes(newletter) in b'GH'
 
+    def get_time(self):
+        return self.state[1]
+
+    def get_state_space_at_time(self, t):
+        return [(x, t) for x in self.pos_space]
+
     def equality_operator(self, s1, s2):
         return (s1 == s2)
 
