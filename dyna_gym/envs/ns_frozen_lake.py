@@ -100,7 +100,7 @@ class NSFrozenLakeEnv(Env):
         self.nT = 10 # n timesteps
 
         self.timestep = 1 # timestep duration
-        self.L_p = 1 # transition kernel Lipschitz constant
+        self.L_p = 0.1 # transition kernel Lipschitz constant
         self.L_r = 10 # reward function Lipschitz constant
 
         self.action_space = spaces.Discrete(self.nA)
@@ -201,17 +201,22 @@ class NSFrozenLakeEnv(Env):
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
-        for i in range(self.nS): # s
-            for j in range(self.nA): # a
-                # 1. Generate distribution for t=0
-                reach = self.reachable_states(i, j)
-                print(reach)
-                exit()
-                T[i,j,0,:] = distribution.random_tabular(size=self.nS)
-                # 2. Build subsequent distributions st LC constraint is respected
+        for i in range(self.nS):
+            for j in range(self.nA):
+                # Generate distribution for t=0
+                rs = self.reachable_states(i, j)
+                nrs = np.sum(rs)
+                d = distribution.random_tabular(size=nrs)
+                dc = list(d.copy())
+                T[i,j,0,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
+                print(T[i,j,0,:])
+                # Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.nT): # t
-                    T[i,j,t,:] = distribution.random_constrained(self.pos_space, T[i,j,t-1,:], self.L_p * self.timestep)
+                    d = distribution.random_constrained(d, self.L_p * self.timestep)
+                    dc = list(d.copy())
+                    T[i,j,t,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
         return T
+
     """ TODO
     def transition_probability_distribution(self, s, t, a):
         '''
