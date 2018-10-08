@@ -3,6 +3,7 @@ local
 outdated
 log
 *.egg-info
+*.pyomo.lp
 
 examples/uct_nativecartpole.py
 nsmdp-algorithms
