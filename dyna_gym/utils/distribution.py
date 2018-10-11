@@ -68,16 +68,17 @@ def worst_dist(v, w0, c):
     '''
     Generate argmin_w (w^T v) st W1(w,w0) <= c where W1 is the Wasserstein distance
     '''
-    n = len(v)
-    u = np.ones(shape=n)
-    assert(np.dot(u, u) == float(n)) #TRM
-    g = v - (np.dot(u, v) / float(n)) * u
-    g = g / sqrt(np.dot(g, g))
-    print(g)#TRM
-    alpha = min(
-        step_zero_coeff_active(w0, g),
-        step_wass_active(c, g)
-    )
-    wstar = w0 - alpha * g
-    wstar = clean_almost_zero_coefficients(wstar)
-    return wstar
+    if utl.are_coeff_equal(v):
+        return w0
+    else:
+        n = len(v)
+        u = np.ones(shape=n)
+        g = v - (np.dot(u, v) / float(n)) * u
+        g = g / sqrt(np.dot(g, g))
+        alpha = min(
+            step_zero_coeff_active(w0, g),
+            step_wass_active(c, g)
+        )
+        wstar = w0 - alpha * g
+        wstar = clean_almost_zero_coefficients(wstar)
+        return wstar
