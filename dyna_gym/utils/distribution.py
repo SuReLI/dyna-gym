@@ -4,6 +4,7 @@ Helpful functions when dealing with distributions
 
 import numpy as np
 from scipy.stats import wasserstein_distance
+import cvxpy as cp
 
 def random_tabular(size):
     '''
@@ -28,3 +29,45 @@ def random_constrained(u, maxdist):
             v = random_tabular(val.size)
     print('Failed to generate constrained distribution after {} trials'.format(max_n_trial))
     exit()
+
+def step_zero_coeff_active(w0, g):
+        return min((w0[i] / g[i]) for i in range(len(w0)) if (g[i] > 0))
+
+def step_wass_active(c, g):
+    n = len(g)
+    f = cp.Variable(n)
+    A = np.eye(n, dtype=int)
+    A = np.delete(A, n-1, axis=0)
+    for i in range(n-1):
+        A[i, i+1] = -1
+    A = np.concatenate((A,-A), axis=0)
+    objective = cp.Maximize(cp.sum(cp.diag(g) * f))
+    constraints = [A * f <= 1]
+    prob = cp.Problem(objective, constraints)
+    result = prob.solve()
+    return c / result
+
+def clean_almost_zero_coefficients(w):
+    for i in range(len(w)):
+        if utl.close(w[i], 0.0):
+            w[i] = 0.0
+        elif w[i] < 0.0:
+            print('Error: negative weight computed ({}th index): w={}'.format(i, w))
+            exit()
+    return w
+
+def worst_dist(v, w0, c):
+    '''
+    Generate argmin_w (w^T v) st W1(w,w0) <= c where W1 is the Wasserstein distance
+    '''
+    n = len(v)
+    u = np.ones(shape=n)
+    g = v - (np.dot(u, v) / np.dot(u, u)) * u
+    g = g / sqrt(np.dot(g, g))
+    alpha = min(
+        step_zero_coeff_active(w0, g),
+        step_wass_active(c, g)
+    )
+    wstar = w0 - alpha * g
+    wstar = clean_almost_zero_coefficients(wstar)
+    return wstar
