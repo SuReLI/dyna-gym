@@ -3,8 +3,10 @@ Helpful functions when dealing with distributions
 """
 
 import numpy as np
-from scipy.stats import wasserstein_distance
 import cvxpy as cp
+import dyna_gym.utils.utils as utl
+from math import sqrt
+from scipy.stats import wasserstein_distance
 
 def random_tabular(size):
     '''
@@ -31,6 +33,12 @@ def random_constrained(u, maxdist):
     exit()
 
 def step_zero_coeff_active(w0, g):
+        l = list((w0[i] / g[i]) for i in range(len(w0)) if (g[i] > 0))#TRM
+        if len(l) == 0:#TRM
+            print('\n\n')
+            print(w0)
+            print(g)
+            print('\n\n')
         return min((w0[i] / g[i]) for i in range(len(w0)) if (g[i] > 0))
 
 def step_wass_active(c, g):
@@ -62,8 +70,10 @@ def worst_dist(v, w0, c):
     '''
     n = len(v)
     u = np.ones(shape=n)
-    g = v - (np.dot(u, v) / np.dot(u, u)) * u
+    assert(np.dot(u, u) == float(n)) #TRM
+    g = v - (np.dot(u, v) / float(n)) * u
     g = g / sqrt(np.dot(g, g))
+    print(g)#TRM
     alpha = min(
         step_zero_coeff_active(w0, g),
         step_wass_active(c, g)
