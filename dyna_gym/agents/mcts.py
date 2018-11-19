@@ -145,12 +145,32 @@ class MCTS(object):
     MCTS agent
     """
     def __init__(self, action_space, rollouts=100, horizon=100, gamma=0.9, is_model_dynamic=True):
-        self.action_space = list(combinations(action_space))
+        if type(action_space) == spaces.discrete.Discrete:
+            self.action_space = list(mcts.combinations(action_space))
+        else:
+            self.action_space = action_space
         self.n_actions = len(self.action_space)
         self.rollouts = rollouts
         self.horizon = horizon
         self.gamma = gamma
         self.is_model_dynamic = is_model_dynamic
+
+    def reset(self, p=None):
+        """
+        Reset the attributes.
+        Expect to receive them in the same order as init.
+        p : list of parameters
+        """
+        if p == None:
+            self.__init__(self.action_space)
+        else:
+            assert len(p) == 5, 'Error: expected 5 parameters received {}'.format(len(p))
+            assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
+            assert type(p[1]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[1]))
+            assert type(p[2]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[2]))
+            assert type(p[3]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[3]))
+            assert type(p[4]) == bool, 'Error: wrong type, expected "bool", received {}'.format(type(p[4]))
+            self.__init__(p[0], p[1], p[2], p[3], p[4])
 
     def display(self):
         """
@@ -163,20 +183,6 @@ class MCTS(object):
         print('Horizon            :', self.horizon)
         print('Gamma              :', self.gamma)
         print('Is model dynamic   :', self.is_model_dynamic)
-
-    def reset(self, p):
-        """
-        Reset the attributes.
-        Expect to receive them in the same order as init.
-        p : list of parameters
-        """
-        assert len(p) == 5, 'Error: expected 5 parameters received {}'.format(len(p))
-        assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
-        assert type(p[1]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[1]))
-        assert type(p[2]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[2]))
-        assert type(p[3]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[3]))
-        assert type(p[4]) == bool, 'Error: wrong type, expected "bool", received {}'.format(type(p[4]))
-        self.__init__(p[0], p[1], p[2], p[3], p[4])
 
     def act(self, env, done):
         return mcts_procedure(self, mcts_tree_policy, env, done)
