@@ -2,6 +2,8 @@
 A Random Agent given as an example
 """
 
+from gym import spaces
+
 class MyRandomAgent(object):
     def __init__(self, action_space):
         self.action_space = action_space
