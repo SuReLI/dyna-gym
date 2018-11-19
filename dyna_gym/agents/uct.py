@@ -44,7 +44,8 @@ class UCT(object):
 
     def reset(self, p):
         """
-        Reset the attributes. Expect to receive them in the same order as init.
+        Reset the attributes.
+        Expect to receive them in the same order as init.
         p : list of parameters
         """
         assert len(p) == 6, 'Error: expected 6 parameters received {}'.format(len(p))
