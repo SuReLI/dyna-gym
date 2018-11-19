@@ -66,7 +66,6 @@ def worst_dist(v, w0, c):
     Ae = np.reshape(np.concatenate((np.ones(n),np.zeros(n))), newshape=(1,2*n))
     be = np.asarray([1])
 
-    res = linprog(obj, A_eq=Ae, b_eq=be, A_ub=A, b_ub=b)#, method='interior-point')
-
+    res = linprog(obj, A_eq=Ae, b_eq=be, A_ub=A, b_ub=b)
     x = res.x[:n]
     return clean_distribution(x)
