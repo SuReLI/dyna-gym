@@ -170,7 +170,7 @@ class MCTS(object):
         Expect to receive them in the same order as init.
         p : list of parameters
         """
-        assert len(p) == 5, 'Error: expected 6 parameters received {}'.format(len(p))
+        assert len(p) == 5, 'Error: expected 5 parameters received {}'.format(len(p))
         assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
         assert type(p[1]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[1]))
         assert type(p[2]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[2]))
