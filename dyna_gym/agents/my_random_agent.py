@@ -14,7 +14,7 @@ class MyRandomAgent(object):
         Expect to receive them in the same order as init.
         p : list of parameters
         """
-        if p not None:
+        if p is not None:
             assert len(p) == 1, 'Error: expected 1 parameters received {}'.format(len(p))
             assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
             self.__init__(p[0])

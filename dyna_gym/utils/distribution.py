@@ -40,7 +40,16 @@ def clean_distribution(w):
             assert w[i] > 0.0, 'Error: negative weight computed ({}th index): w={}'.format(i, w)
     return w
 
-def worst_dist(v, w0, c):
+def worst_cramer_distribution(v, w0, c):
+    """
+    Generate argmin_w (w^T v) st W1(w,w0) <= c where W1 is the Wasserstein distance
+    """
+    print('v', v)
+    print('w0', w0)
+    print('c', c)
+    exit()
+
+def worst_wasserstein_distribution(v, w0, c):
     """
     Generate argmin_w (w^T v) st W1(w,w0) <= c where W1 is the Wasserstein distance
     """
