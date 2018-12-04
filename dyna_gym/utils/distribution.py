@@ -4,9 +4,51 @@ Helpful functions when dealing with distributions
 
 import numpy as np
 import dyna_gym.utils.utils as utl
-from scipy.stats import wasserstein_distance
+#from scipy.stats import wasserstein_distance
 from scipy.optimize import linprog
 from math import sqrt
+
+def marginal_matrices(n):
+    A = np.zeros(shape=(n, n**2))
+    B = np.zeros(shape=(n, n**2))
+    for i in range(n):
+        A[i][i*n:(i+1)*n] = 1
+        for j in range(n):
+            B[i][j*n+i] = 1
+    return A, B
+
+def wass_primal(u, v, d):
+    """
+    Compute the 1-Wasserstein distance between u (shape=n) and v (shape=n) given the distances matrix d (shape=(n,n)).
+    Use the primal formulation.
+    """
+    n = d.shape[0]
+    obj = np.reshape(d, newshape=(n*n))
+    A, B = marginal_matrices(n)
+    Ae = np.concatenate((A, B), axis=0)
+    be = np.concatenate((u, v))
+    res = linprog(obj, A_eq=Ae, b_eq=be)
+    return res.fun
+
+def wass_dual(u, v, d):
+    """
+    Compute the 1-Wasserstein distance between u (shape=n) and v (shape=n) given the distances matrix d (shape=(n,n)).
+    Use the dual formulation.
+    """
+    n = d.shape[0]
+    comb = np.array(list(combinations(range(n), 2)))
+    obj = u - v
+    Au = np.zeros(shape=(n*(n-1),n))
+    bu = np.zeros(shape=(n*(n-1)))
+    for i in range(len(comb)):
+        Au[2*i][comb[i][0]] = +1.0
+        Au[2*i][comb[i][1]] = -1.0
+        Au[2*i+1][comb[i][0]] = -1.0
+        Au[2*i+1][comb[i][1]] = +1.0
+        bu[2*i] = d[comb[i][0]][comb[i][1]]
+        bu[2*i+1] = d[comb[i][0]][comb[i][1]]
+    res = linprog(obj, A_ub=Au, b_ub=bu)
+    return -res.fun
 
 def random_tabular(size):
     """
@@ -40,41 +82,44 @@ def clean_distribution(w):
             assert w[i] > 0.0, 'Error: negative weight computed ({}th index): w={}'.format(i, w)
     return w
 
-def worst_cramer_distribution(v, w0, c):
-    """
-    Generate argmin_w (w^T v) st W1(w,w0) <= c where W1 is the Wasserstein distance
-    """
-    print('v', v)
-    print('w0', w0)
-    print('c', c)
-    exit()
-
-def worst_wasserstein_distribution(v, w0, c):
-    """
-    Generate argmin_w (w^T v) st W1(w,w0) <= c where W1 is the Wasserstein distance
-    """
+def worstcase_distribution_dichotomy_method(v, w0, c, d):
+    time_start = time.time()
     n = len(v)
-    obj = np.concatenate((v, np.zeros(shape=n)), axis=0)
+    if n > 28:
+        print('WARNING: solver instabilities above this number of dimensions (n={})'.format(n))
+    if op.close(c, 0.0) or op.closevec(v, v[0] * np.ones(n)):
+        return w0, (time.time() - time_start)
+    w_worst = np.zeros(n)
+    w_worst[np.argmin(v)] = 1.0
+    if (op.wass_dual(w_worst, w0, d) <= c): # fastest
+        return w_worst, (time.time() - time_start)
+    else:
+        wmax = w_worst
+        wmin = w0
+        w = 0.5 * (wmin + wmax)
+        for i in range(1000):
+            if (op.wass_dual(w, w0, d) <= c):
+                wmin = w
+                wnew = 0.5 * (wmin + wmax)
+            else:
+                wmax = w
+                wnew = 0.5 * (wmin + wmax)
+            if op.closevec(wnew, w, 6):
+                w = wnew
+                break
+            else:
+                w = wnew
+    return op.clean_distribution(w), (time.time() - time_start)
 
-    U = np.zeros(shape=(n,n))
-    for i in range(n):
-        for j in range(i+1):
-            U[i][j] = 1.0
-    A1 = np.concatenate((-np.eye(n),np.zeros(shape=(n,n))), axis=1)
-    A2 = np.reshape(np.concatenate((np.zeros(n), np.ones(n))), newshape=(1,2*n))
-    A3 = np.concatenate((U,-np.eye(n)), axis=1)
-    A4 = np.concatenate((-U,-np.eye(n)), axis=1)
-    A = np.concatenate((A1,A2,A3,A4), axis=0)
-
-    b1 = np.zeros(n)
-    b2 = np.asarray([c])
-    b3 = np.dot(U,w0)
-    b4 = np.dot(-U,w0)
-    b = np.concatenate((b1,b2,b3,b4), axis=0)
-
-    Ae = np.reshape(np.concatenate((np.ones(n),np.zeros(n))), newshape=(1,2*n))
-    be = np.asarray([1])
-
-    res = linprog(obj, A_eq=Ae, b_eq=be, A_ub=A, b_ub=b)
-    x = res.x[:n]
-    return clean_distribution(x)
+def worstcase_distribution_direct_method(v, w0, c, d):
+    time_start = time.time()
+    n = len(v)
+    if op.close(c, 0.0) or op.closevec(v, v[0] * np.ones(n)):
+        return w0, (time.time() - time_start)
+    w_worst = np.zeros(n)
+    w_worst[np.argmin(v)] = 1.0
+    if (op.wass_dual(w_worst, w0, d) <= c): # fastest
+        return w_worst, (time.time() - time_start)
+    lbd = c / op.wass_dual(w0, w_worst, d)
+    w = w_an = (1.0 - lbd) * w0 + lbd * w_worst
+    return op.clean_distribution(w), (time.time() - time_start)

@@ -6,11 +6,11 @@ import dyna_gym.agents.uct as uct
 env = gym.make('CartPoleDynamicReward-v2')
 agent = uct.UCT(
     action_space=env.action_space,
-    rollouts=500,
-    horizon=200,
+    rollouts=100,
+    horizon=50,
     is_model_dynamic=True
 )
-timesteps = 100
+timesteps = 1000
 verbose = False
 
 ### Run
