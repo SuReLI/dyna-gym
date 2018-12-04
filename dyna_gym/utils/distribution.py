@@ -87,39 +87,38 @@ def worstcase_distribution_dichotomy_method(v, w0, c, d):
     n = len(v)
     if n > 28:
         print('WARNING: solver instabilities above this number of dimensions (n={})'.format(n))
-    if op.close(c, 0.0) or op.closevec(v, v[0] * np.ones(n)):
-        return w0, (time.time() - time_start)
+    if close(c, 0.0) or closevec(v, v[0] * np.ones(n)):
+        return w0
     w_worst = np.zeros(n)
     w_worst[np.argmin(v)] = 1.0
-    if (op.wass_dual(w_worst, w0, d) <= c): # fastest
-        return w_worst, (time.time() - time_start)
+    if (wass_dual(w_worst, w0, d) <= c):
+        return w_worst
     else:
         wmax = w_worst
         wmin = w0
         w = 0.5 * (wmin + wmax)
-        for i in range(1000):
-            if (op.wass_dual(w, w0, d) <= c):
+        for i in range(1000): # max iter is 1000
+            if (wass_dual(w, w0, d) <= c):
                 wmin = w
                 wnew = 0.5 * (wmin + wmax)
             else:
                 wmax = w
                 wnew = 0.5 * (wmin + wmax)
-            if op.closevec(wnew, w, 6):
+            if closevec(wnew, w, 6): # precision is 1e-6
                 w = wnew
                 break
             else:
                 w = wnew
-    return op.clean_distribution(w), (time.time() - time_start)
+    return clean_distribution(w)
 
 def worstcase_distribution_direct_method(v, w0, c, d):
-    time_start = time.time()
     n = len(v)
-    if op.close(c, 0.0) or op.closevec(v, v[0] * np.ones(n)):
-        return w0, (time.time() - time_start)
+    if close(c, 0.0) or closevec(v, v[0] * np.ones(n)):
+        return w0
     w_worst = np.zeros(n)
     w_worst[np.argmin(v)] = 1.0
-    if (op.wass_dual(w_worst, w0, d) <= c): # fastest
-        return w_worst, (time.time() - time_start)
-    lbd = c / op.wass_dual(w0, w_worst, d)
+    if (wass_dual(w_worst, w0, d) <= c):
+        return w_worst
+    lbd = c / wass_dual(w0, w_worst, d)
     w = w_an = (1.0 - lbd) * w0 + lbd * w_worst
-    return op.clean_distribution(w), (time.time() - time_start)
+    return clean_distribution(w)
