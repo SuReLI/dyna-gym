@@ -30,6 +30,14 @@ MAPS = {
     ],
 }
 
+class State:
+    """
+    State class
+    """
+    def __init__(self, index, time):
+        self.index = index
+        self.time = time
+
 def random_map(map_size):
     nR, nC = map_size
     nH = int(0.2 * nR * nC) # Number of holes
@@ -128,11 +136,14 @@ class NSFrozenLakeEnv(Env):
         return [seed]
 
     def reset(self):
-        self.state = (categorical_sample(self.isd, self.np_random), 0) # (position, time)
-        self.lastaction=None # for rendering
+        self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
+        self.lastaction = None # for rendering
         return self.state
 
     def inc(self, row, col, a):
+        """
+        Given a position (row, col) and an action a, return the resulting position (row, col).
+        """
         if a==0: # left
             col = max(col-1,0)
         elif a==1: # down
@@ -144,12 +155,35 @@ class NSFrozenLakeEnv(Env):
         return (row, col)
 
     def to_s(self, row, col):
+        """
+        From the state's position (row, col), return the state index.
+        """
         return row * self.ncol + col
 
     def to_m(self, s):
+        """
+        From the state index, return the state's position (row, col).
+        """
         row = int(s / self.ncol)
         col = s - row * self.ncol
         return row, col
+
+    def distance(self, s1, s2):
+        r1, c1 = self.to_m(s1.index)
+        r2, c2 = self.to_m(s2.index)
+        return abs(r1 - r2) + abs(c1 - c2)
+
+    def equality_operator(self, s1, s2):
+        return (s1 == s2)
+
+    def is_terminal(self, s):
+        """
+        Return True if the input state is terminal.
+        """
+        p = get_position(s)
+        row, col = self.to_m(p)
+        letter = self.desc[row, col]
+        return bytes(letter) in b'GH'
 
     def reachable_states(self, s, a):
         rs = np.zeros(shape=self.nS, dtype=int)
@@ -169,15 +203,17 @@ class NSFrozenLakeEnv(Env):
             for j in range(self.nA):
                 # Generate distribution for t=0
                 rs = self.reachable_states(i, j)
+                print('reachable states :\n', rs)
+                exit()
                 nrs = np.sum(rs)
-                d = distribution.random_tabular(size=nrs)
-                dc = list(d.copy())
-                T[i,j,0,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
+                w = distribution.random_tabular(size=nrs)
+                wcopy = list(w.copy())
+                T[i,j,0,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
                 # Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.nT): # t
-                    d = distribution.random_constrained(d, self.L_p * self.timestep)
-                    dc = list(d.copy())
-                    T[i,j,t,:] = np.asarray([0 if x == 0 else dc.pop() for x in rs], dtype=float)
+                    w = distribution.random_constrained(w, self.L_p * self.timestep)
+                    wcopy = list(w.copy())
+                    T[i,j,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
         return T
 
     def transition_probability_distribution(self, s, t, a):
@@ -196,12 +232,6 @@ class NSFrozenLakeEnv(Env):
         assert a < self.nA, 'Error: action bigger than nA: a={} nA={}'.format(a, nA)
         return self.T[p, a, t, p_p]
 
-    def is_terminal(self, s):
-        p = get_position(s)
-        row, col = self.to_m(p)
-        letter = self.desc[row, col]
-        return bytes(letter) in b'GH'
-
     def get_time(self):
         return self.state[1]
 
@@ -218,9 +248,6 @@ class NSFrozenLakeEnv(Env):
                 srs[idx] = (i, s[1])
                 idx += 1
         return srs
-
-    def equality_operator(self, s1, s2):
-        return (s1 == s2)
 
     def transition(self, s, a, is_model_dynamic=True):
         """
