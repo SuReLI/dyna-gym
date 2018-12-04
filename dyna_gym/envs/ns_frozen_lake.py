@@ -64,14 +64,6 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
-def get_position(s):
-    if (type(s) == tuple):
-        p = s[0]
-    else:
-        p = s
-    assert (isinstance(p, np.int64) or isinstance(p, int)), 'Error: position type is not int: type={}'.format(type(p))
-    return p
-
 class NSFrozenLakeEnv(Env):
     """
     Winter is here. You and your friends were tossing around a frisbee at the park
@@ -169,25 +161,30 @@ class NSFrozenLakeEnv(Env):
         return row, col
 
     def distance(self, s1, s2):
-        r1, c1 = self.to_m(s1.index)
-        r2, c2 = self.to_m(s2.index)
-        return abs(r1 - r2) + abs(c1 - c2)
+        """
+        Return the Manhattan distance between the positions of states s1 and s2
+        """
+        row1, col1 = self.to_m(s1.index)
+        row2, col2 = self.to_m(s2.index)
+        return abs(row1 - row2) + abs(col1 - col2)
 
     def equality_operator(self, s1, s2):
-        return (s1 == s2)
+        """
+        Return True if the input states have the same indexes.
+        """
+        return (s1.index == s2.index)
 
     def is_terminal(self, s):
         """
         Return True if the input state is terminal.
         """
-        p = get_position(s)
-        row, col = self.to_m(p)
+        row, col = self.to_m(s.index)
         letter = self.desc[row, col]
         return bytes(letter) in b'GH'
 
     def reachable_states(self, s, a):
         rs = np.zeros(shape=self.nS, dtype=int)
-        row, col = self.to_m(s)
+        row, col = self.to_m(s.index)
         if self.is_slippery:
             for b in [(a-1)%4, a, (a+1)%4]:
                 newrow, newcol = self.inc(row, col, b)
@@ -198,6 +195,7 @@ class NSFrozenLakeEnv(Env):
         return rs
 
     def generate_transition_matrix(self):
+        #TODO here
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
         for i in range(self.nS):
             for j in range(self.nA):
