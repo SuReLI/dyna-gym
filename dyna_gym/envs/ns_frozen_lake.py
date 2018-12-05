@@ -164,8 +164,14 @@ class NSFrozenLakeEnv(Env):
         """
         Return the Manhattan distance between the positions of states s1 and s2
         """
-        row1, col1 = self.to_m(s1.index)
-        row2, col2 = self.to_m(s2.index)
+        if (type(s1) == State) and (type(s2) == State):
+            row1, col1 = self.to_m(s1.index)
+            row2, col2 = self.to_m(s2.index)
+        else:
+            assert (type(s1) == int), 'Error: input state has wrong type: type={}'.format(type(s1))
+            assert (type(s2) == int), 'Error: input state has wrong type: type={}'.format(type(s2))
+            row1, col1 = self.to_m(s1)
+            row2, col2 = self.to_m(s2)
         return abs(row1 - row2) + abs(col1 - col2)
 
     def equality_operator(self, s1, s2):
@@ -183,8 +189,12 @@ class NSFrozenLakeEnv(Env):
         return bytes(letter) in b'GH'
 
     def reachable_states(self, s, a):
+        if (type(s) == State):
+            row, col = self.to_m(s.index)
+        else:
+            assert (type(s) == int), 'Error: input state has wrong type: type={}'.format(type(s))
+            row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
-        row, col = self.to_m(s.index)
         if self.is_slippery:
             for b in [(a-1)%4, a, (a+1)%4]:
                 newrow, newcol = self.inc(row, col, b)
@@ -195,57 +205,62 @@ class NSFrozenLakeEnv(Env):
         return rs
 
     def generate_transition_matrix(self):
-        #TODO here
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
         for i in range(self.nS):
             for j in range(self.nA):
                 # Generate distribution for t=0
                 rs = self.reachable_states(i, j)
-                print('reachable states :\n', rs)
-                exit()
                 nrs = np.sum(rs)
                 w = distribution.random_tabular(size=nrs)
                 wcopy = list(w.copy())
                 T[i,j,0,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
+                d = np.zeros(shape=(nrs, nrs))
+                diag = 0
+                for k in range(len(rs)):
+                    if rs[k] == 1:
+                        d[diag][diag] = 0.0
+                        col = 1
+                        for l in range(k + 1, len(rs)):
+                            if rs[l] == 1:
+                                d[diag][diag+col] = self.distance(k,l)
+                                d[diag+col][diag] = self.distance(k,l)
+                                col += 1
+                        diag += 1
                 # Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.nT): # t
-                    w = distribution.random_constrained(w, self.L_p * self.timestep)
+                    w = distribution.random_constrained(w, d, self.L_p * self.timestep)
                     wcopy = list(w.copy())
                     T[i,j,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
         return T
 
     def transition_probability_distribution(self, s, t, a):
-        p = get_position(s)
-        assert p < self.nS, 'Error: position bigger than nS: p={} nS={}'.format(p, nS)
+        assert s.index < self.nS, 'Error: index bigger than nS: s.index={} nS={}'.format(s.index, nS)
         assert t < self.nT, 'Error: time bigger than nT: t={} nT={}'.format(t, nT)
         assert a < self.nA, 'Error: action bigger than nA: a={} nA={}'.format(a, nA)
-        return self.T[p, a, t]
+        return self.T[s.index, a, t]
 
     def transition_probability(self, s_p, s, t, a):
-        p = get_position(s)
-        p_p = get_position(s_p)
-        assert p_p < self.nS, 'Error: position bigger than nS: p_p={} nS={}'.format(p_p, nS)
-        assert p < self.nS, 'Error: position bigger than nS: p={} nS={}'.format(p, nS)
+        assert s_p.index < self.nS, 'Error: position bigger than nS: s_p.index={} nS={}'.format(s_p.index, nS)
+        assert s.index < self.nS, 'Error: position bigger than nS: s.index={} nS={}'.format(s.index, nS)
         assert t < self.nT, 'Error: time bigger than nT: t={} nT={}'.format(t, nT)
         assert a < self.nA, 'Error: action bigger than nA: a={} nA={}'.format(a, nA)
-        return self.T[p, a, t, p_p]
+        return self.T[s.index, a, t, s_p.index]
 
     def get_time(self):
-        return self.state[1]
+        return self.state.time
 
     def static_reachable_states(self, s, a):
         """
-        Return an array of the reachable states.
+        Return a numpy array of the reachable states.
         Static means that no time increment is performed.
         """
-        rs = self.reachable_states(s[0], a)
-        srs = np.zeros(shape=sum(rs), dtype=tuple)
-        idx = 0
+        rs = self.reachable_states(s, a)
+        srs = []
         for i in range(len(rs)):
             if rs[i] == 1:
-                srs[idx] = (i, s[1])
-                idx += 1
-        return srs
+                srs.append(State(i, s.time))
+        assert (len(srs) == sum(rs))
+        return np.array(srs)
 
     def transition(self, s, a, is_model_dynamic=True):
         """
@@ -254,7 +269,7 @@ class NSFrozenLakeEnv(Env):
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
         """
-        p, t = s
+        p, t = s.index, s.time
         d = self.transition_probability_distribution(p, t, a)
         p_p = categorical_sample(d, self.np_random)
         newrow, newcol = self.to_m(p_p)
@@ -265,10 +280,13 @@ class NSFrozenLakeEnv(Env):
             done = True
         if is_model_dynamic:
             t += 1
-        s_p = (p_p, t)
+        s_p = State(p_p, t)
         return s_p, r, done
 
     def reward(self, s, t, a):
+        """
+        Return the expected reward function at s, t, a
+        """
         r = 0
         d = self.transition_probability_distribution(s, t, a)
         for i in range(len(d)):
@@ -278,17 +296,17 @@ class NSFrozenLakeEnv(Env):
         return r
 
     def _step(self, a):
-        s, r, d = self.transition(self.state, a, True)
+        s, r, done = self.transition(self.state, a, True)
         self.state = s
         self.lastaction = a
-        return (s, r, d, {})
+        return (s, r, done, {})
 
     def _render(self, mode='human', close=False):
         if close:
             return
         outfile = StringIO() if mode == 'ansi' else sys.stdout
 
-        row, col = self.state[0] // self.ncol, self.state[0] % self.ncol
+        row, col = self.state.index // self.ncol, self.state.index % self.ncol
         desc = self.desc.tolist()
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
