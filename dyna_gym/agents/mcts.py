@@ -145,8 +145,8 @@ class MCTS(object):
     MCTS agent
     """
     def __init__(self, action_space, rollouts=100, horizon=100, gamma=0.9, is_model_dynamic=True):
-        if type(action_space) == spaces.discrete.Discrete:
-            self.action_space = list(mcts.combinations(action_space))
+        if type(action_space) == gspaces.discrete.Discrete:
+            self.action_space = list(combinations(action_space))
         else:
             self.action_space = action_space
         self.n_actions = len(self.action_space)
