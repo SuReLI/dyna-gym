@@ -3,7 +3,7 @@ Helpful functions when dealing with distributions
 """
 
 import numpy as np
-import dyna_gym.utils.utils as utl
+import dyna_gym.utils.utils as utils
 #from scipy.stats import wasserstein_distance
 from itertools import combinations
 from scipy.optimize import linprog
@@ -78,7 +78,7 @@ def random_constrained(u, d, maxdist):
 
 def clean_distribution(w):
     for i in range(len(w)):
-        if utl.close(w[i], 0.0):
+        if utils.close(w[i], 0.0):
             w[i] = 0.0
         else:
             assert w[i] > 0.0, 'Error: negative weight computed ({}th index): w={}'.format(i, w)
@@ -89,7 +89,7 @@ def worstcase_distribution_dichotomy_method(v, w0, c, d):
     n = len(v)
     if n > 28:
         print('WARNING: solver instabilities above this number of dimensions (n={})'.format(n))
-    if close(c, 0.0) or closevec(v, v[0] * np.ones(n)):
+    if utils.close(c, 0.0) or utils.closevec(v, v[0] * np.ones(n)):
         return w0
     w_worst = np.zeros(n)
     w_worst[np.argmin(v)] = 1.0
@@ -106,7 +106,7 @@ def worstcase_distribution_dichotomy_method(v, w0, c, d):
             else:
                 wmax = w
                 wnew = 0.5 * (wmin + wmax)
-            if closevec(wnew, w, 6): # precision is 1e-6
+            if utils.closevec(wnew, w, 6): # precision is 1e-6
                 w = wnew
                 break
             else:
@@ -115,7 +115,7 @@ def worstcase_distribution_dichotomy_method(v, w0, c, d):
 
 def worstcase_distribution_direct_method(v, w0, c, d):
     n = len(v)
-    if close(c, 0.0) or closevec(v, v[0] * np.ones(n)):
+    if utils.close(c, 0.0) or utils.closevec(v, v[0] * np.ones(n)):
         return w0
     w_worst = np.zeros(n)
     w_worst[np.argmin(v)] = 1.0

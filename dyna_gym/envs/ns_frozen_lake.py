@@ -204,6 +204,18 @@ class NSFrozenLakeEnv(Env):
             rs[self.to_s(newrow, newcol)] = 1
         return rs
 
+    def distances_matrix(self, states):
+        """
+        Return the distance matrix D corresponding to the states of the input array.
+        D[i,j] = distance(si, sj)
+        """
+        D = np.zeros(shape=(len(states), len(states)))
+        for i in range(len(states)):
+            for j in range(i+1, len(states)):
+                D[i,j] = self.distance(states[i], states[j])
+                D[j,i] = self.distance(states[i], states[j])
+        return D
+
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
         for i in range(self.nS):
@@ -214,21 +226,14 @@ class NSFrozenLakeEnv(Env):
                 w = distribution.random_tabular(size=nrs)
                 wcopy = list(w.copy())
                 T[i,j,0,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
-                d = np.zeros(shape=(nrs, nrs))
-                diag = 0
+                states = []
                 for k in range(len(rs)):
                     if rs[k] == 1:
-                        d[diag][diag] = 0.0
-                        col = 1
-                        for l in range(k + 1, len(rs)):
-                            if rs[l] == 1:
-                                d[diag][diag+col] = self.distance(k,l)
-                                d[diag+col][diag] = self.distance(k,l)
-                                col += 1
-                        diag += 1
+                        states.append(State(k,0))
+                D = self.distances_matrix(states)
                 # Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.nT): # t
-                    w = distribution.random_constrained(w, d, self.L_p * self.timestep)
+                    w = distribution.random_constrained(w, D, self.L_p * self.timestep)
                     wcopy = list(w.copy())
                     T[i,j,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
         return T
