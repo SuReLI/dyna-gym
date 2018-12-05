@@ -107,7 +107,7 @@ class NSFrozenLakeEnv(Env):
         self.nT = 11 # n timesteps
 
         self.timestep = 1 # timestep duration
-        self.L_p = 0.1 # transition kernel Lipschitz constant
+        self.L_p = 1.0 # transition kernel Lipschitz constant
         self.L_r = 10 # reward function Lipschitz constant
 
         self.action_space = spaces.Discrete(self.nA)
@@ -269,18 +269,18 @@ class NSFrozenLakeEnv(Env):
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
         """
-        p, t = s.index, s.time
-        d = self.transition_probability_distribution(p, t, a)
+        d = self.transition_probability_distribution(s, s.time, a)
         p_p = categorical_sample(d, self.np_random)
         newrow, newcol = self.to_m(p_p)
         newletter = self.desc[newrow, newcol]
-        done = bytes(newletter) in b'GH'
+        done = bytes(newletter) in b'GH' # Hole of Goal reached
         r = float(newletter == b'G')
-        if t >= self.nT - 1: # Timeout
+        if s.time >= self.nT - 1: # Timeout
             done = True
         if is_model_dynamic:
-            t += 1
-        s_p = State(p_p, t)
+            s_p = State(p_p, s.time+self.timestep)
+        else:
+            s_p = State(p_p, s.time)
         return s_p, r, done
 
     def reward(self, s, t, a):
