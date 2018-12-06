@@ -10,7 +10,8 @@ env.equality_operator(s1, s2)
 
 import random
 import itertools
-from gym import spaces as gspaces
+import dyna_gym.utils.utils as utils
+from gym import spaces
 from math import sqrt, log
 from copy import copy
 
@@ -27,9 +28,9 @@ def decision_node_value(node):
     return chance_node_value(max(node.children, key=chance_node_value))
 
 def combinations(space):
-    if isinstance(space, gspaces.Discrete):
+    if isinstance(space, spaces.Discrete):
         return range(space.n)
-    elif isinstance(space, gspaces.Tuple):
+    elif isinstance(space, spaces.Tuple):
         return itertools.product(*[combinations(s) for s in space.spaces])
     else:
         raise NotImplementedError
@@ -145,7 +146,7 @@ class MCTS(object):
     MCTS agent
     """
     def __init__(self, action_space, rollouts=100, horizon=100, gamma=0.9, is_model_dynamic=True):
-        if type(action_space) == gspaces.discrete.Discrete:
+        if type(action_space) == spaces.discrete.Discrete:
             self.action_space = list(combinations(action_space))
         else:
             self.action_space = action_space
@@ -164,12 +165,7 @@ class MCTS(object):
         if p == None:
             self.__init__(self.action_space)
         else:
-            assert len(p) == 5, 'Error: expected 5 parameters received {}'.format(len(p))
-            assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
-            assert type(p[1]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[1]))
-            assert type(p[2]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[2]))
-            assert type(p[3]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[3]))
-            assert type(p[4]) == bool, 'Error: wrong type, expected "bool", received {}'.format(type(p[4]))
+            utils.assert_types(p,[spaces.discrete.Discrete, int, int, float, bool])
             self.__init__(p[0], p[1], p[2], p[3], p[4])
 
     def display(self):

@@ -5,6 +5,7 @@ OLUCT (Open Loop UCT) Algorithm
 import gym
 import random
 import itertools
+import dyna_gym.utils.utils as utils
 from math import sqrt, log
 from copy import copy
 
@@ -52,14 +53,9 @@ class OLUCT(object):
         p : list of parameters
         """
         if p == None:
-            self.__init__()
+            self.__init__(self.action_space)
         else:
-            assert len(p) == 5, 'Error: expected 5 parameters received {}'.format(len(p))
-            assert type(p[0]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[0]))
-            assert type(p[1]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[1]))
-            assert type(p[2]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[2]))
-            assert type(p[3]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[3]))
-            assert type(p[4]) == bool, 'Error: wrong type, expected "bool", received {}'.format(type(p[4]))
+            utils.assert_types(p,[float, int, int, float, bool])
             self.__init__(p[0], p[1], p[2], p[3], p[4])
 
     def display(self):
@@ -67,10 +63,9 @@ class OLUCT(object):
         Display infos about the attributes.
         """
         print('Displaying OLUCT agent:')
-        print('Number of actions  :', self.n_actions)
-        print('Rollouts           :', self.rollouts)
-        print('Horizon            :', self.horizon)
         print('Gamma              :', self.gamma)
+        print('Rollouts           :', self.rollouts)
+        print('Max depth          :', self.max_depth)
         print('UCB constant       :', self.ucb_constant)
         print('Is model dynamic   :', self.is_model_dynamic)
 

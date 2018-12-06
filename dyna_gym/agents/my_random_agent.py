@@ -3,6 +3,7 @@ A Random Agent given as an example
 """
 
 from gym import spaces
+import dyna_gym.utils.utils as utils
 
 class MyRandomAgent(object):
     def __init__(self, action_space):
@@ -15,8 +16,7 @@ class MyRandomAgent(object):
         p : list of parameters
         """
         if p is not None:
-            assert len(p) == 1, 'Error: expected 1 parameters received {}'.format(len(p))
-            assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
+            utils.assert_types(p,[spaces.discrete.Discrete])
             self.__init__(p[0])
 
     def display(self):

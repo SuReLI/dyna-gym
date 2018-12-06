@@ -16,3 +16,11 @@ def are_coeff_equal(v):
 
 def are_coeff_close(v):
     return bool(np.prod(list(close(v[i],v[i+1]) for i in range(len(v)-1)), axis=0))
+
+def assert_types(p, types_list):
+    """
+    Assert that the types of the elements of p match those of the types_list
+    """
+    assert len(p) == len(types_list), 'Error: expected {} parameters received {}'.format(len(types_list), len(p))
+    for i in range(len(p)):
+        assert type(p[i]) == types_list[i], 'Error: wrong type, expected {}, received {}'.format(types_list[i], type(p[i]))

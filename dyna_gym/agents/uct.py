@@ -10,6 +10,7 @@ env.equality_operator(s1, s2)
 
 import itertools
 import dyna_gym.agents.mcts as mcts
+import dyna_gym.utils.utils as utils
 from math import sqrt, log
 from gym import spaces
 
@@ -41,13 +42,7 @@ class UCT(object):
         if p == None:
             self.__init__(self.action_space)
         else:
-            assert len(p) == 6, 'Error: expected 6 parameters received {}'.format(len(p))
-            assert type(p[0]) == spaces.discrete.Discrete, 'Error: wrong type, expected "gym.spaces.discrete.Discrete", received {}'.format(type(p[0]))
-            assert type(p[1]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[1]))
-            assert type(p[2]) == int, 'Error: wrong type, expected "int", received {}'.format(type(p[2]))
-            assert type(p[3]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[3]))
-            assert type(p[4]) == float, 'Error: wrong type, expected "float", received {}'.format(type(p[4]))
-            assert type(p[5]) == bool, 'Error: wrong type, expected "bool", received {}'.format(type(p[5]))
+            utils.assert_types(p,[spaces.discrete.Discrete, int, int, float, float, bool])
             self.__init__(p[0], p[1], p[2], p[3], p[4], p[5])
 
     def display(self):
