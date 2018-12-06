@@ -11,12 +11,20 @@ DOWN = 1
 RIGHT = 2
 UP = 3
 
+"""
+[
+    "SFFF",
+    "FHFH",
+    "FFFH",
+    "HFFG"
+]
+"""
 MAPS = {
     "4x4": [
-        "SFFF",
-        "FHFH",
+        "SFHF",
+        "FFHH",
         "FFFH",
-        "HFFG"
+        "FFFG"
     ],
     "8x8": [
         "SFFFFFFF",
@@ -91,7 +99,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="random", map_size=(3,3), is_slippery=True):
+    def __init__(self, desc=None, map_name="4x4", map_size=(5,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -104,16 +112,15 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 11 # n timesteps
+        self.nT = 30 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.timestep = 1 # timestep duration
-        self.L_p = 0.3 # transition kernel Lipschitz constant
-        self.L_r = 10 # reward function Lipschitz constant
+        self.L_p = 0.2 # transition kernel Lipschitz constant
+        self.L_r = 0.0 # reward function Lipschitz constant
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
-
         self._seed()
         self.reset()
 

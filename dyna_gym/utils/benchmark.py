@@ -56,23 +56,23 @@ def benchmark(agent_name, agent, param_pool, env_name, nenv, nepi, tmax, save=Tr
     """
     nag = len(param_pool)
     if save:
-        csv_write(['agent_name', 'agent_number', 'env_name', 'env_number', 'epi_number', 'score'], path, 'w')
-    for i in range(nag):
-        agent.reset(param_pool[i])
+        csv_write(['env_name', 'env_number', 'agent_name', 'agent_number', 'epi_number', 'score'], path, 'w')
+    for j in range(nenv):
+        env = gym.make(env_name)
         if verbose:
-            print('Created agent', i+1, '/', nag)
-            agent.display()
-        for j in range(nenv):
-            env = gym.make(env_name)
+            print('Created environment', j+1, '/', nenv)
+        for i in range(nag):
+            agent.reset(param_pool[i])
             if verbose:
-                print('Created environment', j+1, '/', nenv)
+                print('Created agent', i+1, '/', nag)
+                agent.display()
             for k in range(nepi):
                 if verbose:
                     print('Run episode', k+1, '/', nepi)
                 env.reset()
                 score = run(agent, env, tmax)
                 if save:
-                    csv_write([agent_name, i, env_name, j, k, score], path, 'a')
+                    csv_write([env_name, j, agent_name, i, k, score], path, 'a')
 
 def test():
     """
