@@ -91,7 +91,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="random", map_size=(3,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="random", map_size=(3,3), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -216,14 +216,19 @@ class NSFrozenLakeEnv(Env):
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
-        for i in range(self.nS):
-            for j in range(self.nA):
+        for s in range(self.nS):
+            for a in range(self.nA):
                 # Generate distribution for t=0
-                rs = self.reachable_states(i, j)
+                rs = self.reachable_states(s, a)
                 nrs = np.sum(rs)
                 w = distribution.random_tabular(size=nrs)
                 wcopy = list(w.copy())
-                T[i,j,0,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
+                T[s,a,0,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
+                row, col = self.to_m(s)
+                row_p, col_p = self.inc(row, col, a)
+                s_p = self.to_s(row_p, col_p)
+                T[s,a,0,s_p] += 1.0 # Increase weight on normally reached state
+                T[s,a,0,:] /= sum(T[s,a,0,:])
                 states = []
                 for k in range(len(rs)):
                     if rs[k] == 1:
@@ -233,7 +238,7 @@ class NSFrozenLakeEnv(Env):
                 for t in range(1, self.nT): # t
                     w = distribution.random_constrained(w, D, self.L_p * self.timestep)
                     wcopy = list(w.copy())
-                    T[i,j,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
+                    T[s,a,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
         return T
 
     def transition_probability_distribution(self, s, t, a):

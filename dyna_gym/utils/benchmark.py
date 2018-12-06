@@ -40,22 +40,23 @@ def run(agent, env, tmax, verbose=False):
             break
     return cr
 
-def benchmark(agent, param_pool, env_name, nenv, nepi, tmax, save=True, name='default', path='log.csv', verbose=True):
+def benchmark(agent_name, agent, param_pool, env_name, nenv, nepi, tmax, save=True, path='log.csv', verbose=True):
     """
     Benchmark a single agent within an environment.
+    agent_name : name of the agent for saving parameter
+    agent      : agent object
     param_pool : tested combinations of parameters
     env_name   : name of the generated environment
     nenv       : number of generated environment
     nepi       : number of episodes per generated environment
     tmax       : timeout for each episode
     save       : save the results or not
-    name       : name of the agent for saving parameter
     path       : path of the save
     verbose    : if true, display informations during benchmark
     """
     nag = len(param_pool)
     if save:
-        csv_write(['agent_name', 'agent_number', 'env_number', 'epi_number', 'score'], path, 'w')
+        csv_write(['agent_name', 'agent_number', 'env_name', 'env_number', 'epi_number', 'score'], path, 'w')
     for i in range(nag):
         agent.reset(param_pool[i])
         if verbose:
@@ -71,7 +72,7 @@ def benchmark(agent, param_pool, env_name, nenv, nepi, tmax, save=True, name='de
                 env.reset()
                 score = run(agent, env, tmax)
                 if save:
-                    csv_write([name, i, j, k, score], path, 'a')
+                    csv_write([agent_name, i, env_name, j, k, score], path, 'a')
 
 def test():
     """
@@ -88,4 +89,4 @@ def test():
         [env.action_space, 100, 100, 0.9, 6.36396103068, True]
     ]
 
-    benchmark(agent, param_pool, 'NSFrozenLakeEnv-v0', nenv, nepi, 100)
+    benchmark('UCT', agent, param_pool, 'NSFrozenLakeEnv-v0', nenv, nepi, 100)
