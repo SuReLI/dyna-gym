@@ -99,25 +99,19 @@ class NSFrozenLakeEnv(Env):
                 desc = random_map(map_size)
             else:
                 desc = MAPS[map_name]
-        self.desc = desc = np.asarray(desc,dtype='c')
+        self.desc = desc = np.asarray(desc, dtype='c')
         self.nrow, self.ncol = nrow, ncol = desc.shape
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
         self.nT = 11 # n timesteps
-
-        self.timestep = 1 # timestep duration
-        self.L_p = 1.0 # transition kernel Lipschitz constant
-        self.L_r = 10 # reward function Lipschitz constant
-
         self.action_space = spaces.Discrete(self.nA)
-        self.pos_space = np.arange(self.nS)
-        self.observation_space = spaces.Discrete(self.nS)
-
         self.is_slippery = is_slippery
+        self.timestep = 1 # timestep duration
+        self.L_p = 0.3 # transition kernel Lipschitz constant
+        self.L_r = 10 # reward function Lipschitz constant
         self.T = self.generate_transition_matrix()
-
-        isd = np.array(desc == b'S').astype('float64').ravel() # Initial state distribution
+        isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
 
         self._seed()
@@ -128,6 +122,10 @@ class NSFrozenLakeEnv(Env):
         return [seed]
 
     def reset(self):
+        """
+        Reset the environment.
+        IMPORTANT: Does not create a new environment.
+        """
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
         return self.state
@@ -148,13 +146,13 @@ class NSFrozenLakeEnv(Env):
 
     def to_s(self, row, col):
         """
-        From the state's position (row, col), return the state index.
+        From the state's position (row, col), retrieve the state index.
         """
         return row * self.ncol + col
 
     def to_m(self, s):
         """
-        From the state index, return the state's position (row, col).
+        From the state index, retrieve the state's position (row, col).
         """
         row = int(s / self.ncol)
         col = s - row * self.ncol
@@ -279,7 +277,11 @@ class NSFrozenLakeEnv(Env):
         newrow, newcol = self.to_m(p_p)
         newletter = self.desc[newrow, newcol]
         done = bytes(newletter) in b'GH' # Hole of Goal reached
-        r = float(newletter == b'G')
+        r = 0.0#r = float(newletter == b'G')
+        if newletter == b'G':
+            r = +1.0
+        elif newletter == b'H':
+            r = -1.0
         if s.time >= self.nT - 1: # Timeout
             done = True
         if is_model_dynamic:

@@ -23,8 +23,10 @@ class UCT(object):
     """
     def __init__(self, action_space, rollouts=100, horizon=100, gamma=0.9, ucb_constant=6.36396103068, is_model_dynamic=True):
         if type(action_space) == spaces.discrete.Discrete:
+            print('A')
             self.action_space = list(mcts.combinations(action_space))
         else:
+            print(type(action_space))
             self.action_space = action_space
         self.n_actions = len(self.action_space)
         self.rollouts = rollouts
