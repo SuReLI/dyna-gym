@@ -131,10 +131,16 @@ class AsynDP(object):
     def heuristic_value(self, node, env):
         return 0.0
 
-    def treetest(root):
+    def treetest(self, root): #TRM
         print('n ch:', len(root.children))
         for ch in root.children:
-            print(ch.state.index, ch.state.time)
+            print('a',ch.action,'->', len(ch.children),'children')
+            for chch in ch.children:
+                print(chch.state.index)
+                assert (chch.state.time == 1)
+                for chchch in chch.children:
+                    for chchchch in chchch.children:
+                        assert (chchchch.state.time == 2)
 
     def act(self, env, done):
         """
@@ -142,7 +148,9 @@ class AsynDP(object):
         """
         self.t_call = env.get_time()
         root = self.initialize_tree(env, done)
-        treetest(root)
+
+        self.treetest(root)
         exit()
+
         self.fill_tree(root, env)
         return max(root.children, key=node_value).action
