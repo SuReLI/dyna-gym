@@ -11,15 +11,12 @@ DOWN = 1
 RIGHT = 2
 UP = 3
 
-"""
-[
-    "SFFF",
-    "FHFH",
-    "FFFH",
-    "HFFG"
-]
-"""
 MAPS = {
+    "toy": [
+        "FSH",
+        "FFH",
+        "GFH"
+    ],
     "4x4": [
         "SFHF",
         "FFHH",
@@ -99,7 +96,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4", map_size=(5,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="toy", map_size=(5,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -112,7 +109,7 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 30 # n timesteps
+        self.nT = 10 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.timestep = 1 # timestep duration
@@ -184,14 +181,6 @@ class NSFrozenLakeEnv(Env):
         Return True if the input states have the same indexes.
         """
         return (s1.index == s2.index)
-
-    def is_terminal(self, s):
-        """
-        Return True if the input state is terminal.
-        """
-        row, col = self.to_m(s.index)
-        letter = self.desc[row, col]
-        return bytes(letter) in b'GH'
 
     def reachable_states(self, s, a):
         if (type(s) == State):
@@ -286,33 +275,49 @@ class NSFrozenLakeEnv(Env):
         """
         d = self.transition_probability_distribution(s, s.time, a)
         p_p = categorical_sample(d, self.np_random)
-        newrow, newcol = self.to_m(p_p)
-        newletter = self.desc[newrow, newcol]
-        done = bytes(newletter) in b'GH' # Hole of Goal reached
-        r = 0.0#r = float(newletter == b'G')
-        if newletter == b'G':
-            r = +1.0
-        elif newletter == b'H':
-            r = -1.0
-        if s.time >= self.nT - 1: # Timeout
-            done = True
         if is_model_dynamic:
-            s_p = State(p_p, s.time+self.timestep)
+            s_p = State(p_p, s.time + self.timestep)
         else:
             s_p = State(p_p, s.time)
+        r = self.instant_reward(s, s.time, a, s_p)
+        done = self.is_terminal(s_p)
         return s_p, r, done
 
-    def reward(self, s, t, a):
+    def instant_reward(self, s, t, a, s_p):
+        """
+        Return the instant reward for transition s, t, a, s_p
+        """
+        newrow, newcol = self.to_m(s_p.index)
+        newletter = self.desc[newrow, newcol]
+        if newletter == b'G':
+            return +1.0
+        elif newletter == b'H':
+            return -1.0
+        else:
+            return 0.0
+
+    def expected_reward(self, s, t, a):
         """
         Return the expected reward function at s, t, a
         """
-        r = 0
+        R = 0.0
         d = self.transition_probability_distribution(s, t, a)
         for i in range(len(d)):
-            row, col = self.to_m(i)
-            ri = float(self.desc[row, col] == b'G')
-            r += ri * d[i]
-        return r
+            s_p = State(i, s.time + self.timestep)
+            r_i = self.instant_reward(s, t, a, s_p)
+            R += r_i * d[i]
+        return R
+
+    def is_terminal(self, s):
+        """
+        Return True if the input state is terminal.
+        """
+        row, col = self.to_m(s.index)
+        letter = self.desc[row, col]
+        done = bytes(letter) in b'GH'
+        if s.time + self.timestep >= self.nT: # Timeout
+            done = True
+        return done
 
     def _step(self, a):
         s, r, done = self.transition(self.state, a, True)
