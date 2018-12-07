@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 import dyna_gym.utils.distribution as distribution
+#from dyna_gym.envs.tabular_nsmdp import TabularNSMDP
 from random import randint
 from six import StringIO, b
 from gym import Env, spaces, utils

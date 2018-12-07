@@ -10,22 +10,18 @@ from gym import Env, error, spaces, utils
 
 logger = logging.getLogger(__name__)
 
-def get_position(s):
-    if (type(s) == tuple):
-        p = s[0]
-    else:
-        p = s
-    assert(isinstance(p, np.int64) or isinstance(p, int))
-    return p
+class State:
+    """
+    State class
+    """
+    def __init__(self, index, time):
+        self.index = index
+        self.time = time
 
 class RandomNSMDP(Env):
-    metadata = {
-        'render.modes': ['human', 'rgb_array'],
-        'video.frames_per_second' : 50
-    }
-
     def __init__(self):
         self.nS = 3 # n states
+        self.nTS = 3 # n terminal states
         self.nA = 2 # n actions
         self.nT = 100 # n timesteps
         self.pos_space = np.array(range(self.nS))
@@ -62,13 +58,10 @@ class RandomNSMDP(Env):
         return T
 
     def transition_probability_distribution(self, s, t, a):
-        p = get_position(s)
-        return self.T[p, a, t]
+        return self.T[s.index, a, t]
 
     def transition_probability(self, s_p, s, t, a):
-        p = get_position(s)
-        p_p = get_position(s_p)
-        return self.T[p, a, t, p_p]
+        return self.T[s.index, a, t, s_p.index]
 
     def generate_reward_matrix(self):
         R = np.zeros(shape=(self.nS, self.nA, self.nT), dtype=float)
@@ -86,21 +79,21 @@ class RandomNSMDP(Env):
         return R
 
     def reward(self, s, t, a):
-        return self.R[get_position(s), a, t]
+        return self.R[s.index, a, t]
 
     def equality_operator(self, s1, s2):
-        '''
-        Equality operator, return True if the two input states are equal.
-        '''
-        return (s1 == s2)
+        """
+        Return True if the input states have the same indexes.
+        """
+        return (s1.index == s2.index)
 
     def transition(self, state, action, is_model_dynamic):
-        '''
+        """
         Transition operator, return the resulting state, reward and a boolean indicating
         whether the termination criterion is reached or not.
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
-        '''
+        """
         p_p, t = self.state
         reward = self.reward(p_p, t, action)
         transition_model = self.transition_probability_distribution(p_p, t, action)
@@ -115,11 +108,11 @@ class RandomNSMDP(Env):
         return state_p, reward, done
 
     def step(self, action):
-        '''
+        """
         Step function equivalent to transition and reward function.
         Actually modifies the environment's state attribute.
         Return (observation, reward, termination criterion (boolean), informations)
-        '''
+        """
         self.state, reward, done = self.transition(self.state, action, True)
         return (self.state, reward, done, {})
 
@@ -136,7 +129,7 @@ class RandomNSMDP(Env):
         return self.state[1]
 
     def render(self, mode='human', close=False):
-        '''
+        """
         No rendering yet
-        '''
+        """
         return None
