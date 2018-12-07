@@ -128,19 +128,35 @@ class AsynDP(object):
         self.build_tree(root, env)
         return root
 
+    def fill_tree(self, node, env):
+        """
+        Fill the tree with Bellman equation updates and bootstraps with heuristic function.
+        """
+        if (type(node) is DecisionNode):
+            if (node.is_terminal or (node.depth == self.max_depth)):
+                assert node.value == None, 'Error: node value={}'.format(node.value)
+                node.value = self.heuristic_value(node, env)
+            else:
+                v = -1e99
+                for ch in node.children:
+                    v = max(v, self.fill_tree(ch, env))
+                assert node.value == None, 'Error: node value={}'.format(node.value)
+                node.value = v
+        else: # ChanceNode
+            v = 0.0
+            for ch in node.children: # pessimistic look-ahead values
+                v += ch.weight * self.fill_tree(ch, env)
+            v *= self.gamma
+            if self.is_model_dynamic:
+                v += env.expected_reward(node.parent.state, node.parent.state.time, node.action)
+            else:
+                v += env.expected_reward(node.parent.state, self.t_call, node.action)
+            assert node.value == None, 'Error: node value={}'.format(node.value)
+            node.value = v
+        return node.value
+
     def heuristic_value(self, node, env):
         return 0.0
-
-    def treetest(self, root): #TRM
-        print('n ch:', len(root.children))
-        for ch in root.children:
-            print('a',ch.action,'->', len(ch.children),'children')
-            for chch in ch.children:
-                print(chch.state.index)
-                assert (chch.state.time == 1)
-                for chchch in chch.children:
-                    for chchchch in chchch.children:
-                        assert (chchchch.state.time == 2)
 
     def act(self, env, done):
         """
@@ -148,9 +164,5 @@ class AsynDP(object):
         """
         self.t_call = env.get_time()
         root = self.initialize_tree(env, done)
-
-        self.treetest(root)
-        exit()
-
         self.fill_tree(root, env)
         return max(root.children, key=node_value).action
