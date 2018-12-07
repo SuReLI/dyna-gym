@@ -253,6 +253,19 @@ class NSFrozenLakeEnv(Env):
     def get_time(self):
         return self.state.time
 
+    def dynamic_reachable_states(self, s, a):
+        """
+        Return a numpy array of the reachable states.
+        Dynamic means that time increment is performed.
+        """
+        rs = self.reachable_states(s, a)
+        srs = []
+        for i in range(len(rs)):
+            if rs[i] == 1:
+                srs.append(State(i, s.time + self.timestep))
+        assert (len(srs) == sum(rs))
+        return np.array(srs)
+
     def static_reachable_states(self, s, a):
         """
         Return a numpy array of the reachable states.
