@@ -9,6 +9,7 @@ env.static_reachable_states(s, a)
 
 import random
 import numpy as np
+import dyna_gym.utils.utils as utils
 from gym import spaces
 
 def node_value(node):
@@ -64,8 +65,8 @@ class AsynDP(object):
         if p == None:
             self.__init__(self.action_space)
         else:
-            utils.assert_types(p,[spaces.discrete.Discrete, float, int])
-            self.__init__(p[0], p[1], p[2])
+            utils.assert_types(p,[spaces.discrete.Discrete, float, int, bool])
+            self.__init__(p[0], p[1], p[2], p[3])
 
     def display(self):
         """
