@@ -102,7 +102,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="cliff", map_size=(5,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="random", map_size=(5,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -115,7 +115,7 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 100 # n timesteps
+        self.nT = 50 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.timestep = 1 # timestep duration
@@ -139,6 +139,14 @@ class NSFrozenLakeEnv(Env):
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
         return self.state
+
+    def display(self):
+        print('Displaying NSFrozenLakeEnv-v0')
+        print('map       :')
+        print(self.desc)
+        print('n states  :', self.nS)
+        print('n actions :', self.nA)
+        print('timeout   :', self.nT)
 
     def inc(self, row, col, a):
         """
@@ -338,13 +346,13 @@ class NSFrozenLakeEnv(Env):
             done = True
         return done
 
-    def _step(self, a):
+    def step(self, a):
         s, r, done = self.transition(self.state, a, True)
         self.state = s
         self.lastaction = a
         return (s, r, done, {})
 
-    def _render(self, mode='human', close=False):
+    def render(self, mode='human', close=False):
         if close:
             return
         outfile = StringIO() if mode == 'ansi' else sys.stdout
