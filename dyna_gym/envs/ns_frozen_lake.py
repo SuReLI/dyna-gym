@@ -13,6 +13,11 @@ RIGHT = 2
 UP = 3
 
 MAPS = {
+    "cliff": [
+        "FFF",
+        "FFF",
+        "SHG"
+    ],
     "toy": [
         "FSH",
         "FFH",
@@ -97,7 +102,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="toy", map_size=(5,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="cliff", map_size=(5,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -110,7 +115,7 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 10 # n timesteps
+        self.nT = 100 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.timestep = 1 # timestep duration
