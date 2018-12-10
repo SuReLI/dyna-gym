@@ -49,7 +49,7 @@ def multi_run(env_name, env_number, env, agent_name_j, agent_number, agent_param
         if save:
             csv_write([env_name, env_number, agent_name_j, agent_number] + agent_param + [thread_number, score], path_j, 'a')
 
-def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save=True, paths_pool=['log.csv'], verbose=True):
+def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, verbose=True):
     """
     Benchmark a single agent within an environment.
     Single thread method.
@@ -69,6 +69,8 @@ def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_na
     n_agents = len(param_pool)
     if save:
         assert len(paths_pool) == n_agents
+        for j in range(n_agents): # Init save files for each agent
+            csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_pool[j] + ['epi_number', 'score'], paths_pool[j], 'w')
     for i in range(n_env):
         env = gym.make(env_name)
         if verbose:
@@ -77,9 +79,6 @@ def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_na
         for j in range(n_agents):
             agent = agent_pool[j]
             n_agents_j = len(param_pool[j])
-            param_names_j = param_names_pool[j]
-            if save:
-                csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_j + ['epi_number', 'score'], paths_pool[j], 'w')
             for k in range(n_agents_j):
                 agent.reset(param_pool[j][k])
                 if verbose:
@@ -93,7 +92,7 @@ def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_na
                     if save:
                         csv_write([env_name, i, agent_name_pool[j], k] + param_pool[j][k] + [l, score], paths_pool[j], 'a')
 
-def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save=True, paths_pool=['log.csv'], n_thread=2, verbose=True):
+def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, n_thread, verbose=True):
     """
     Benchmark a single agent within an environment.
     Multithread method.
@@ -114,6 +113,8 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
     n_agents = len(param_pool)
     if save:
         assert len(paths_pool) == n_agents
+        for j in range(n_agents): # Init save files for each agent
+            csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_pool[j] + ['epi_number', 'score'], paths_pool[j], 'w')
     for i in range(n_env):
         env = gym.make(env_name)
         if verbose:
@@ -122,11 +123,6 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
         for j in range(n_agents):
             agent = agent_pool[j]
             n_agents_j = len(param_pool[j])
-            param_names_j = param_names_pool[j]
-            path_j = paths_pool[j]
-            agent_name_j = agent_name_pool[j]
-            if save:
-                csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_j + ['thread_number', 'score'], path_j, 'w')
             for k in range(n_agents_j):
                 agent.reset(param_pool[j][k])
                 if verbose:
@@ -139,7 +135,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                 agent_param = param_pool[j][k]
                 n_epi_per_thread = int(n_epi / n_thread)
                 for l in range(n_thread):
-                    results_pool.append(pool.apply_async(multi_run, [env_name, i, env, agent_name_j, agent_number, agent_param, agent, tmax, n_epi_per_thread, l+1, save, path_j, verbose]))
+                    results_pool.append(pool.apply_async(multi_run, [env_name, i, env, agent_name_pool[j], agent_number, agent_param, agent, tmax, n_epi_per_thread, l+1, save, paths_pool[j], verbose]))
                 for result in results_pool:
                     result.get()
 
