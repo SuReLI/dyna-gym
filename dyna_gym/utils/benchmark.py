@@ -52,6 +52,7 @@ def multi_run(env_name, env_number, env, agent_name_j, agent_number, agent_param
 def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save=True, paths_pool=['log.csv'], verbose=True):
     """
     Benchmark a single agent within an environment.
+    Single thread method.
     env_name         : name of the generated environment
     n_env            : number of generated environment
     agent_name_pool  : list containing the names of the agents for saving purpose
@@ -72,6 +73,7 @@ def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_na
         env = gym.make(env_name)
         if verbose:
             print('Created environment', i+1, '/', n_env)
+            env.display()
         for j in range(n_agents):
             agent = agent_pool[j]
             n_agents_j = len(param_pool[j])
@@ -94,6 +96,7 @@ def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_na
 def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save=True, paths_pool=['log.csv'], n_thread=2, verbose=True):
     """
     Benchmark a single agent within an environment.
+    Multithread method.
     env_name         : name of the generated environment
     n_env            : number of generated environment
     agent_name_pool  : list containing the names of the agents for saving purpose
@@ -115,6 +118,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
         env = gym.make(env_name)
         if verbose:
             print('Created environment', i+1, '/', n_env)
+            env.display()
         for j in range(n_agents):
             agent = agent_pool[j]
             n_agents_j = len(param_pool[j])
@@ -140,12 +144,13 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                     result.get()
 
 def test_multithread():
-    env = gym.make('NSFrozenLakeEnv-v0')
-    nenv = 1
-    nepi = 1000
+    env_name = 'NSFrozenLakeEnv-v0'
+    n_env = 1
+    n_epi = 1000
     tmax = 100
     n_thread = 5
 
+    env = gym.make(env_name)
     agent_name_pool = ['UCT']
     agent_pool = [uct.UCT(env.action_space)]
     param_names_pool = [
@@ -156,17 +161,28 @@ def test_multithread():
     ]
     paths_pool = ['multitest.csv']
 
-    multithread_benchmark('NSFrozenLakeEnv-v0', nenv, agent_name_pool, agent_pool, param_pool, param_names_pool, nepi, tmax, save=True, paths_pool=paths_pool, n_thread=n_thread, verbose=True)
+    multithread_benchmark(
+        env_name         = env_name,
+        n_env            = n_env,
+        agent_name_pool  = agent_name_pool,
+        agent_pool       = agent_pool,
+        param_pool       = param_pool,
+        param_names_pool = param_names_pool,
+        n_epi            = n_epi,
+        tmax             = tmax,
+        save             = True,
+        paths_pool       = paths_pool,
+        n_thread         = n_thread,
+        verbose          = True
+    )
 
 def test():
-    """
-    Example
-    """
-    env = gym.make('NSFrozenLakeEnv-v0')
-    nenv = 1
-    nepi = 3
+    env_name = 'NSFrozenLakeEnv-v0'
+    n_env = 1
+    n_epi = 3
     tmax = 100
 
+    env = gym.make(env_name)
     agent_name_pool = ['UCT','RANDOM']
     agent_pool = [uct.UCT(env.action_space), ra.MyRandomAgent(env.action_space)]
     param_names_pool = [
@@ -179,4 +195,16 @@ def test():
     ]
     paths_pool = ['uct.csv','random.csv']
 
-    benchmark('NSFrozenLakeEnv-v0', nenv, agent_name_pool, agent_pool, param_pool, param_names_pool, nepi, tmax, save=True, paths_pool=paths_pool, verbose=True)
+    benchmark(
+        env_name         = env_name,
+        n_env            = n_env,
+        agent_name_pool  = agent_name_pool,
+        agent_pool       = agent_pool,
+        param_pool       = param_pool,
+        param_names_pool = param_names_pool,
+        n_epi            = n_epi,
+        tmax             = tmax,
+        save             = True,
+        paths_pool       = paths_pool,
+        verbose          = True
+    )

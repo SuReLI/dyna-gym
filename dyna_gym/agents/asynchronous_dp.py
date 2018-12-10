@@ -50,7 +50,7 @@ class AsynDP(object):
     """
     def __init__(self, action_space, gamma=0.9, max_depth=4, is_model_dynamic=True):
         self.action_space = action_space
-        self.n_actions = self.action_space.shape[0]
+        self.n_actions = self.action_space.n
         self.gamma = gamma
         self.max_depth = max_depth
         self.is_model_dynamic = is_model_dynamic
