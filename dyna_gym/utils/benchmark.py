@@ -40,14 +40,22 @@ def run(agent, env, tmax, verbose=False):
             break
     return cr
 
-def multi_run(env_name, env_number, env, agent_name_j, agent_number, agent_param, agent, tmax, n_epi, thread_number, save, path_j, verbose):
+def multi_run(env_name, env_number, env, agent_name, agent_number, agent_param, agent, tmax, n_epi, thread_number, save, path, verbose):
+    saving_pool = []
     for epi_number in range(n_epi):
         if verbose:
             print('Thread', thread_number, 'running episode', epi_number+1, '/', n_epi)
         env.reset()
         score = run(agent, env, tmax)
+        '''
         if save:
-            csv_write([env_name, env_number, agent_name_j, agent_number] + agent_param + [thread_number, score], path_j, 'a')
+            csv_write([env_name, env_number, agent_name, agent_number] + agent_param + [thread_number, score], path, 'a')
+        '''
+        if save:
+            saving_pool.append([env_name, env_number, agent_name, agent_number] + agent_param + [thread_number, score])
+    if save:
+        for row in saving_pool:
+            csv_write(row, path, 'a')
 
 def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, verbose=True):
     """
