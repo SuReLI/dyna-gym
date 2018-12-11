@@ -115,11 +115,11 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 50 # n timesteps
+        self.nT = 10 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.timestep = 1 # timestep duration
-        self.L_p = 0.2 # transition kernel Lipschitz constant
+        self.L_p = 1.0 # transition kernel Lipschitz constant
         self.L_r = 0.0 # reward function Lipschitz constant
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
