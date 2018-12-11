@@ -40,7 +40,7 @@ def run(agent, env, tmax, verbose=False):
             break
     return cr
 
-def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, verbose=True):
+def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, verbose=True):
     """
     Benchmark a single agent within an environment.
     Single thread method.
@@ -57,38 +57,39 @@ def benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_na
     verbose          : if true, display informations during benchmark
     """
     assert len(agent_name_pool) == len(agent_pool) == len(param_pool)
-    n_agents = len(param_pool)
+    n_agt = len(param_pool)
     if save:
-        assert len(paths_pool) == n_agents
-        for j in range(n_agents): # Init save files for each agent
-            csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_pool[j] + ['epi_number', 'score'], paths_pool[j], 'w')
-    for i in range(n_env):
+        assert len(paths_pool) == n_agt
+        for _agt in range(n_agt): # Init save files for each agent
+            csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_pool[_agt] + ['epi_number', 'score'], paths_pool[_agt], 'w')
+    for _env in range(n_env):
         env = gym.make(env_name)
         if verbose:
-            print('Created environment', i+1, '/', n_env)
+            print('Created environment', _env+1, '/', n_env)
             env.display()
-        for j in range(n_agents):
-            agent = agent_pool[j]
-            n_agents_j = len(param_pool[j])
-            for k in range(n_agents_j):
-                agent.reset(param_pool[j][k])
+        for _agt in range(n_agt):
+            agt_name = agent_name_pool[_agt]
+            agt = agent_pool[_agt]
+            n_prm = len(param_pool[_agt])
+            for _prm in range(n_prm):
+                prm = param_pool[_agt][_prm]
+                agt.reset(prm)
                 if verbose:
-                    print('Created agent', j+1, '/', n_agents,'with parameters', k+1, '/', n_agents_j)
-                    agent.display()
-                for l in range(n_epi):
+                    print('Created agent', _agt+1, '/', n_agt,'with parameters', _prm+1, '/', n_prm)
+                    agt.display()
+                for _epi in range(n_epi):
                     if verbose:
-                        print('Environment', i+1, '/', n_env, 'agent', j+1, '/', n_agents,'with parameters', k+1, '/', n_agents_j, 'running episode', l+1, '/', n_epi)
-                        #print('Running episode', l+1, '/', n_epi)
+                        print('Environment', env_name, _env+1, '/', n_env, 'agent', agt_name, _prm+1, '/', n_prm,'running episode', _epi+1, '/', n_epi)
                     env.reset()
-                    score = run(agent, env, tmax)
+                    score = run(agt, env, tmax)
                     if save:
-                        csv_write([env_name, i, agent_name_pool[j], k] + param_pool[j][k] + [l, score], paths_pool[j], 'a')
+                        csv_write([env_name, _env, agt_name, _prm] + prm + [_epi, score], paths_pool[_agt], 'a')
 
 def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr, save, path, verbose):
     saving_pool = []
     for _epi in range(n_epi):
         if verbose:
-            print('Environment',env_name, _env+1, '/', n_env, 'agent', agt_name, _prm+1, '/', n_prm,'running episode', _epi+1, '/', n_epi, '(thread nb', _thr, ')')
+            print('Environment', env_name, _env+1, '/', n_env, 'agent', agt_name, _prm+1, '/', n_prm,'running episode', _epi+1, '/', n_epi, '(thread nb', _thr, ')')
         env.reset()
         score = run(agt, env, tmax)
         if save:
@@ -128,16 +129,16 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
             print('Created environment', _env+1, '/', n_env)
             env.display()
         for _agt in range(n_agt):
+            agt_name = agent_name_pool[_agt]
             agt = agent_pool[_agt]
             n_prm = len(param_pool[_agt])
             for _prm in range(n_prm):
-                agt.reset(param_pool[_agt][_prm])
+                prm = param_pool[_agt][_prm]
+                agt.reset(prm)
                 if verbose:
                     print('Created agent', _agt+1, '/', n_agt,'with parameters', _prm+1, '/', n_prm)
                     agt.display()
                 results_pool = []
-                prm = param_pool[_agt][_prm]
-                agt_name = agent_name_pool[_agt]
                 for _thr in range(n_thread):
                     results_pool.append(pool.apply_async(multi_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, save, paths_pool[_agt], verbose]))
                 for result in results_pool:
@@ -161,7 +162,7 @@ def test_multithread():
         [[env.action_space,  1, 1, 0.9, 6.36396103068, True],[env.action_space, 10, 10, 0.9, 6.36396103068, True]],
         [[env.action_space]]
     ]
-    paths_pool = ['test_uct.csv','test_random.csv']
+    paths_pool = ['data/test_uct.csv','data/test_random.csv']
 
     multithread_benchmark(
         env_name         = env_name,
@@ -178,10 +179,10 @@ def test_multithread():
         verbose          = True
     )
 
-def test():
+def test_singlethread():
     env_name = 'NSFrozenLakeEnv-v0'
-    n_env = 1
-    n_epi = 3
+    n_env = 2
+    n_epi = 8
     tmax = 100
 
     env = gym.make(env_name)
@@ -193,11 +194,11 @@ def test():
     ]
     param_pool = [
         [[env.action_space,  10, 100, 0.9, 6.36396103068, True],[env.action_space, 100, 100, 0.9, 6.36396103068, True]],
-        [[env.action_space],[env.action_space],[env.action_space]]
+        [[env.action_space]]
     ]
-    paths_pool = ['uct.csv','random.csv']
+    paths_pool = ['data/test_uct.csv','data/test_random.csv']
 
-    benchmark(
+    singlethread_benchmark(
         env_name         = env_name,
         n_env            = n_env,
         agent_name_pool  = agent_name_pool,
