@@ -110,6 +110,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
     verbose          : if true, display informations during benchmark
     """
     assert len(agent_name_pool) == len(agent_pool) == len(param_pool)
+    pool = Pool(processes=n_thread)
     n_agents = len(param_pool)
     if save:
         assert len(paths_pool) == n_agents
@@ -128,8 +129,6 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                 if verbose:
                     print('Created agent', j+1, '/', n_agents,'with parameters', k+1, '/', n_agents_j)
                     agent.display()
-                # EPISODES
-                pool = Pool()
                 results_pool = []
                 agent_number = k
                 agent_param = param_pool[j][k]
