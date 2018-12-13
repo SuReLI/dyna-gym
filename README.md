@@ -8,28 +8,38 @@ It contains both the dynamic environments i.e. whose transition and reward funct
 The implemented environments are the following and can be found at `dyna-gym/dyna_gym/envs`.
 For each environment, the id given as argument to the gym.make function is writen in bold.
 
-- <b>CartPoleDynamicTransition-v0</b>. A cart pole environment with a time-varying direction of the gravitational force;
+- <b>RandomNSMDP-v0</b>. A randomly generated NSMDP;
+
+- <b>NSFrozenLakeEnv-v0</b>. A frozen lake environment where the ice is melting resulting in time-varying transition probabilities;
+<p align="center">
+	<img height="100" width="auto" src="img/nsfrozenlake.gif">
+</p>
+<p align="center">
+	<b>NSFrozenLakeEnv-v0</b> environment. The probability distribution of a next state's transition depends on time.
+</p>
+
+- <b>NSCartPole-v0</b>. A cart pole environment with a time-varying direction of the gravitational force;
 <p align="center">
 	<img height="250" width="auto" src="img/cartpole_nstransition.gif">
 </p>
 <p align="center">
-	Cart pole in the <b>CartPoleDynamicTransition-v0</b> environment. The red bar indicates the direction of the gravitational force.
+	Cart pole in the <b>NSCartPole-v0</b> environment. The red bar indicates the direction of the gravitational force.
 </p>
 
-- <b>CartPoleDynamicReward-v1</b>. A cart pole environment with a double objective: to balance the pole and to keep the position of the cart along the x-axis within a time-varying interval;
+- <b>NSCartPole-v1</b>. A cart pole environment with a double objective: to balance the pole and to keep the position of the cart along the x-axis within a time-varying interval;
 <p align="center">
 	<img height="250" width="auto" src="img/cartpole_nsreward1.gif">
 </p>
 <p align="center">
-	Cart pole in the <b>CartPoleDynamicReward-v1</b> environment. The two red dots correspond to the limiting interval.
+	Cart pole in the <b>NSCartPole-v1</b> environment. The two red dots correspond to the limiting interval.
 </p>
 
-- <b>CartPoleDynamicReward-v2</b>. A cart pole environment with a time-varying cone into which the pole should balance.
+- <b>NSCartPole-v2</b>. A cart pole environment with a time-varying cone into which the pole should balance.
 <p align="center">
 	<img height="250" width="auto" src="img/cartpole_nsreward2.gif">
 </p>
 <p align="center">
-	Cart pole in the <b>CartPoleDynamicReward-v2</b> environment. The two black lines correspond to the limiting angle interval.
+	Cart pole in the <b>NSCartPole-v2</b> environment. The two black lines correspond to the limiting angle interval.
 </p>
 
 

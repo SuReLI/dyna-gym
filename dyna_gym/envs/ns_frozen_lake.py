@@ -24,10 +24,10 @@ MAPS = {
         "GFH"
     ],
     "4x4": [
-        "SFHF",
-        "FFHH",
+        "SFFF",
+        "FHFH",
         "FFFH",
-        "FFFG"
+        "HFFG"
     ],
     "8x8": [
         "SFFFFFFF",
@@ -102,7 +102,7 @@ class NSFrozenLakeEnv(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="random", map_size=(5,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="4x4", map_size=(5,5), is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
@@ -115,11 +115,11 @@ class NSFrozenLakeEnv(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 10 # n timesteps
+        self.nT = 40 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.timestep = 1 # timestep duration
-        self.L_p = 1.0 # transition kernel Lipschitz constant
+        self.L_p = 0.2 # transition kernel Lipschitz constant
         self.L_r = 0.0 # reward function Lipschitz constant
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
@@ -253,14 +253,14 @@ class NSFrozenLakeEnv(Env):
 
     def transition_probability_distribution(self, s, t, a):
         assert s.index < self.nS, 'Error: index bigger than nS: s.index={} nS={}'.format(s.index, nS)
-        assert t < self.nT, 'Error: time bigger than nT: t={} nT={}'.format(t, nT)
+        assert t < self.nT, 'Error: time bigger than nT: t={} nT={}'.format(t, self.nT)
         assert a < self.nA, 'Error: action bigger than nA: a={} nA={}'.format(a, nA)
         return self.T[s.index, a, t]
 
     def transition_probability(self, s_p, s, t, a):
         assert s_p.index < self.nS, 'Error: position bigger than nS: s_p.index={} nS={}'.format(s_p.index, nS)
         assert s.index < self.nS, 'Error: position bigger than nS: s.index={} nS={}'.format(s.index, nS)
-        assert t < self.nT, 'Error: time bigger than nT: t={} nT={}'.format(t, nT)
+        assert t < self.nT, 'Error: time bigger than nT: t={} nT={}'.format(t, self.nT)
         assert a < self.nA, 'Error: action bigger than nA: a={} nA={}'.format(a, nA)
         return self.T[s.index, a, t, s_p.index]
 
