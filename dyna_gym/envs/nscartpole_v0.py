@@ -1,4 +1,6 @@
 """
+NSCartPole-v0
+
 Cart-pole system with a dynamic transition function
 """
 
@@ -11,7 +13,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class CartPoleDynamicTransition(gym.Env):
+class NSCartPoleV0(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second' : 50

@@ -16,16 +16,16 @@ register(
 )
 
 register(
-    id='CartPoleDynamicTransition-v0',
-    entry_point='dyna_gym.envs:CartPoleDynamicTransition',
+    id='NSCartPole-v0',
+    entry_point='dyna_gym.envs:NSCartPoleV0',
 )
 
 register(
-    id='CartPoleDynamicReward-v1',
-    entry_point='dyna_gym.envs:CartPoleDynamicRewardV1',
+    id='NSCartPole-v1',
+    entry_point='dyna_gym.envs:NSCartPoleV1',
 )
 
 register(
-    id='CartPoleDynamicReward-v2',
-    entry_point='dyna_gym.envs:CartPoleDynamicRewardV2',
+    id='NSCartPole-v2',
+    entry_point='dyna_gym.envs:NSCartPoleV2',
 )

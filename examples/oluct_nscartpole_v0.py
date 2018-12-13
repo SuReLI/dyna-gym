@@ -1,10 +1,10 @@
 import gym
-import dyna_gym.envs.cartpole_dynamic_transition
-import dyna_gym.agents.mcts as mcts
+import dyna_gym.envs.nscartpole_v0
+import dyna_gym.agents.oluct as oluct
 
 ### Parameters
-env = gym.make('CartPoleDynamicTransition-v0')
-agent = mcts.MCTS(action_space=env.action_space)
+env = gym.make('NSCartPole-v0')
+agent = oluct.OLUCT()
 timesteps = 100
 verbose = False
 

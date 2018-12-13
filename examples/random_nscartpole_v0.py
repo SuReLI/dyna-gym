@@ -1,15 +1,10 @@
 import gym
-import dyna_gym.envs.cartpole_dynamic_transition
-import dyna_gym.agents.uct as uct
+import dyna_gym.envs.nscartpole_v0
+import dyna_gym.agents.my_random_agent as ra
 
 ### Parameters
-env = gym.make('CartPoleDynamicReward-v1')
-agent = uct.UCT(
-    action_space=env.action_space,
-    rollouts=500,
-    horizon=200,
-    is_model_dynamic=True
-)
+env = gym.make('NSCartPole-v0')
+agent = ra.MyRandomAgent(env.action_space)
 timesteps = 100
 verbose = False
 
@@ -17,7 +12,7 @@ verbose = False
 env.reset()
 done = False
 for ts in range(timesteps):
-    __, reward, done, __ = env.step(agent.act(env,done))
+    __, __, done, __ = env.step(agent.act(0,0,0))
     if verbose:
         env.print_state()
     env.render()

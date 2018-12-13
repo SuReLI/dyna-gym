@@ -1,9 +1,9 @@
 import gym
-import dyna_gym.envs.cartpole_dynamic_transition
+import dyna_gym.envs.nscartpole_v2
 import dyna_gym.agents.uct as uct
 
 ### Parameters
-env = gym.make('CartPoleDynamicReward-v2')
+env = gym.make('NSCartPole-v2')
 agent = uct.UCT(
     action_space=env.action_space,
     rollouts=100,

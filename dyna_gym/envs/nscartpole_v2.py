@@ -1,7 +1,8 @@
 """
+NSCartPole-v2
+
 Cart-pole system with a dynamic reward function.
-The objective is to balance the pole + to keep the position of the cart along the x-axis
-within a time-varying interval.
+The objective is to keep the pole within a cone varying with time.
 """
 
 import logging
@@ -13,7 +14,7 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-class CartPoleDynamicRewardV1(gym.Env):
+class NSCartPoleV2(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array'],
         'video.frames_per_second' : 50
@@ -26,26 +27,26 @@ class CartPoleDynamicRewardV1(gym.Env):
         self.total_mass = (self.masspole + self.masscart)
         self.length = 0.5 # actually half the pole's length
         self.polemass_length = (self.masspole * self.length)
-        self.force_mag = 15.0
-        self.nb_actions = 9 # number of discrete actions in [-force_mag,+force_mag]
+        self.force_mag = 10.0
+        self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
         # Angle at which to fail the episode
-        self.theta_threshold_radians = 12 * 2 * math.pi / 360
         self.x_threshold = 2.4
 
         # Dynamic parameters
-        self.center = 0 # Goal position
-        self.center_threshold = 0.5 # Maximum distance to x=0
-        self.center_period = 20 # Oscillation period in seconds
+        self.theta_magnitude = 12 * 2 * math.pi / 360 # Max theta magnitude
+        self.oscillation_magnitude = 18 * 2 * math.pi / 360 # Oscillation magnitude
+        self.oscillation_period = 2 # Oscillation period in seconds
         self.tol = 0.2 # Maximum allowed distance to center
 
-        # Angle limit set to 2 * theta_threshold_radians so failing observation is still within bounds
+        # Angle limit set to 2 * theta_magnitude so failing observation is still within bounds
         high = np.array([
             self.x_threshold * 2,
             np.finfo(np.float32).max,
-            self.theta_threshold_radians * 2,
+            self.theta_magnitude * 2,
             np.finfo(np.float32).max])
+        self.delta = 0
 
         self.action_space = spaces.Discrete(self.nb_actions)
         self.observation_space = spaces.Box(-high, high)
@@ -68,7 +69,7 @@ class CartPoleDynamicRewardV1(gym.Env):
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
-        self.state = np.append(self.state,0.0) # time
+        self.state = np.append(self.state, 0.0) # time
         self.steps_beyond_done = None
         return np.array(self.state)
 
@@ -96,32 +97,19 @@ class CartPoleDynamicRewardV1(gym.Env):
         theta_dot = theta_dot + self.tau * thetaacc
         if is_model_dynamic:
             time = time + self.tau
-        state_p = (x,x_dot,theta,theta_dot,time)
+        state_p = (x, x_dot, theta, theta_dot, time)
         # Termination criterion
-        self.center = self.center_threshold * math.sin(time * 6.28318530718 / self.center_period)
-        done =  x < self.center - self.tol \
-                or x > self.center + self.tol \
-                or theta < -self.theta_threshold_radians \
-                or theta > self.theta_threshold_radians
+        self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
+        done =  x < -self.x_threshold \
+                or x > self.x_threshold \
+                or theta < -self.theta_magnitude + self.delta \
+                or theta > self.theta_magnitude + self.delta
         done = bool(done)
 
         if not done:
             reward = 1.0
         else:
             reward = 0.0
-        '''
-        elif self.steps_beyond_done is None:
-            # Pole just fell!
-            self.steps_beyond_done = 0
-            reward = 1.0
-        else:
-            if self.steps_beyond_done == 0:
-                logger.warning("You are calling 'step()' even though this environment has \
-                already returned done = True. You should always call 'reset()' once you \
-                receive 'done = True' -- any further steps are undefined behavior.")
-            self.steps_beyond_done += 1
-            reward = 0.0
-        '''
         return state_p, reward, done
 
     def step(self, action):
@@ -178,17 +166,23 @@ class CartPoleDynamicRewardV1(gym.Env):
             self.axle.set_color(.5,.5,.8)
             self.viewer.add_geom(self.axle)
 
-            self.limptrans = rendering.Transform()
-            limp = rendering.make_circle(polewidth/2)
-            limp.add_attr(self.limptrans)
-            limp.set_color(1,0,0)
-            self.viewer.add_geom(limp)
+            # Left bar
+            l,r,t,b = -1,1,1000,0
+            lbar = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
+            lbar.set_color(0,0,0)
+            self.lbartrans = rendering.Transform(translation=(0, axleoffset))
+            lbar.add_attr(self.lbartrans)
+            lbar.add_attr(self.carttrans)
+            self.viewer.add_geom(lbar)
 
-            self.limmtrans = rendering.Transform()
-            limm = rendering.make_circle(polewidth/2)
-            limm.add_attr(self.limmtrans)
-            limm.set_color(1,0,0)
-            self.viewer.add_geom(limm)
+            # Right bar
+            l,r,t,b = -1,1,1000,0
+            rbar = rendering.FilledPolygon([(l,b), (l,t), (r,t), (r,b)])
+            rbar.set_color(0,0,0)
+            self.rbartrans = rendering.Transform(translation=(0, axleoffset))
+            rbar.add_attr(self.rbartrans)
+            rbar.add_attr(self.carttrans)
+            self.viewer.add_geom(rbar)
 
             self.track = rendering.Line((0,carty), (screen_width,carty))
             self.track.set_color(0,0,0)
@@ -198,11 +192,9 @@ class CartPoleDynamicRewardV1(gym.Env):
 
         x = self.state
         cartx = x[0]*scale+screen_width/2.0 # MIDDLE OF CART
-        limmx = (self.center-self.tol)*scale+screen_width/2.0
-        limpx = (self.center+self.tol)*scale+screen_width/2.0
         self.carttrans.set_translation(cartx, carty)
-        self.limmtrans.set_translation(limmx, carty)
-        self.limptrans.set_translation(limpx, carty)
         self.poletrans.set_rotation(-x[2])
+        self.rbartrans.set_rotation(-self.theta_magnitude - self.delta)
+        self.lbartrans.set_rotation(self.theta_magnitude - self.delta)
 
         return self.viewer.render(return_rgb_array = mode=='rgb_array')

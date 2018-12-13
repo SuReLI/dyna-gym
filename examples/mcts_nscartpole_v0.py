@@ -1,13 +1,10 @@
 import gym
-import dyna_gym.envs.cartpole_dynamic_transition
-import dyna_gym.agents.uct as uct
+import dyna_gym.envs.nscartpole_v0
+import dyna_gym.agents.mcts as mcts
 
 ### Parameters
-env = gym.make('CartPoleDynamicTransition-v0')
-agent = uct.UCT(
-    action_space=env.action_space,
-    rollouts=100
-)
+env = gym.make('NSCartPole-v0')
+agent = mcts.MCTS(action_space=env.action_space)
 timesteps = 100
 verbose = False
 
