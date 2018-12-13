@@ -20,7 +20,7 @@ class NSCartPoleV2(gym.Env):
         'video.frames_per_second' : 50
     }
 
-    def __init__(self):
+    def __init__(self, is_stochastic=True):
         self.gravity = 9.8
         self.masscart = 1.0
         self.masspole = 0.1
@@ -30,6 +30,8 @@ class NSCartPoleV2(gym.Env):
         self.force_mag = 10.0
         self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
+        self.is_stochastic = is_stochastic # are transitions stochastic
+        self.noise_scale = 0.01
 
         # Angle at which to fail the episode
         self.x_threshold = 2.4
@@ -98,6 +100,11 @@ class NSCartPoleV2(gym.Env):
         if is_model_dynamic:
             time = time + self.tau
         state_p = (x, x_dot, theta, theta_dot, time)
+        if self.is_stochastic:
+            noise = np.random.normal(loc=0.0, scale=self.noise_scale, size=4)
+            noise = np.append(noise, [0.0])
+            state_p = tuple(state_p + noise)
+
         # Termination criterion
         self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
         done =  x < -self.x_threshold \
