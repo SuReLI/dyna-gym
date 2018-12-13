@@ -10,19 +10,19 @@ agent = uct.UCT(
     horizon=50,
     is_model_dynamic=True
 )
-timesteps = 1000
-verbose = False
 
 ### Run
 env.reset()
 done = False
-for ts in range(timesteps):
+verbose = False
+timeout = 1000
+for ts in range(timeout):
     __, reward, done, __ = env.step(agent.act(env,done))
     if verbose:
         env.print_state()
     env.render()
-    if ts+1 == timesteps:
-        print("Successfully reached end of episode ({} timesteps)".format(ts+1))
+    if ts+1 == timeout:
+        print("Successfully reached end of episode ({} timeout)".format(ts+1))
     if done:
-        print("Episode finished after {} timesteps".format(ts+1))
+        print("Episode finished after {} timeout".format(ts+1))
         break

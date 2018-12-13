@@ -54,6 +54,7 @@ class CartPoleDynamicRewardV1(gym.Env):
         self.viewer = None
         self.state = None
         self.steps_beyond_done = None
+        self.reset()
 
     def equality_operator(self, s1, s2):
         '''

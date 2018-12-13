@@ -53,6 +53,7 @@ class CartPoleDynamicRewardV2(gym.Env):
         self.viewer = None
         self.state = None
         self.steps_beyond_done = None
+        self.reset()
 
     def equality_operator(self, s1, s2):
         '''
@@ -66,7 +67,7 @@ class CartPoleDynamicRewardV2(gym.Env):
 
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
-        self.state = np.append(self.state,0.0) # time
+        self.state = np.append(self.state, 0.0) # time
         self.steps_beyond_done = None
         return np.array(self.state)
 
