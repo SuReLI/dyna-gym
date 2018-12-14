@@ -217,9 +217,10 @@ class NSFrozenLakeEnv(Env):
         Return the distance matrix D corresponding to the states of the input array.
         D[i,j] = distance(si, sj)
         """
-        D = np.zeros(shape=(len(states), len(states)))
-        for i in range(len(states)):
-            for j in range(i+1, len(states)):
+        n = len(states)
+        D = np.zeros(shape=(n, n))
+        for i in range(n):
+            for j in range(i+1, n):
                 D[i,j] = self.distance(states[i], states[j])
                 D[j,i] = self.distance(states[i], states[j])
         return D

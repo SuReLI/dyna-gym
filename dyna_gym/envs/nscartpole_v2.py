@@ -61,16 +61,6 @@ class NSCartPoleV2(gym.Env):
         self.steps_beyond_done = None
         self.reset()
 
-    def equality_operator(self, s1, s2):
-        """
-        Equality operator, return True if the two input states are equal.
-        Only test the 4 first components (x, x_dot, theta, theta_dot)
-        """
-        for i in range(4):
-            if not math.isclose(s1[i], s2[i], rel_tol=1e-5):
-                return False
-        return True
-
     def reset(self):
         self.state = self.np_random.uniform(low=-0.05, high=0.05, size=(4,))
         self.state = np.append(self.state, 0.0) # time
@@ -83,6 +73,47 @@ class NSCartPoleV2(gym.Env):
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
+
+    def equality_operator(self, s1, s2):
+        """
+        Equality operator, return True if the two input states are equal.
+        Only test the 4 first components (x, x_dot, theta, theta_dot)
+        """
+        for i in range(4):
+            if not math.isclose(s1[i], s2[i], rel_tol=1e-5):
+                return False
+        return True
+
+    def distance(self, s1, s2):
+        """
+        Return the distance between the two input states.
+        """
+        s1 = s1[0:3]
+        s2 = s2[0:3]
+
+        d1 = np.linalg.norm(s1-s2, ord=2)
+        d2 = 0.0
+        for i in range(4):
+            d2 += (s1[i] - s2[i])**2
+        d2 = math.sqrt(d2)
+        print(d1, d2)
+        assert(d1 == d2)
+
+
+        return np.linalg.norm(s1-s2, ord=2)
+
+    def distances_matrix(self, states):
+        """
+        Return the distance matrix D corresponding to the states of the input array.
+        D[i,j] = distance(si, sj)
+        """
+        n = len(states)
+        D = np.zeros(shape=(n, n))
+        for i in range(n):
+            for j in range(i+1, n):
+                D[i,j] = self.distance(states[i], states[j])
+                D[j,i] = self.distance(states[i], states[j])
+        return D
 
     def transition_probability(self, s_p, s, t, a):
         """
