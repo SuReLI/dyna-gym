@@ -85,6 +85,17 @@ class NSCartPoleV2(gym.Env):
         return [seed]
 
     def transition_probability(self, s_p, s, t, a):
+        """
+        Return the probability for the input transition.
+        """
+        if self.is_stochastic:
+            return 1.0 / 9.0
+        else:
+            real_s_p = self.deterministic_transition(s, a, True)
+            if self.equality_operator(s_p, real_s_p):
+                return 1.0
+            else:
+                return 0.0
 
     def deterministic_transition(self, s, a, is_model_dynamic):
         """
