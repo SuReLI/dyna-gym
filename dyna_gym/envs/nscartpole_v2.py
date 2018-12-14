@@ -62,10 +62,10 @@ class NSCartPoleV2(gym.Env):
         self.reset()
 
     def equality_operator(self, s1, s2):
-        '''
+        """
         Equality operator, return True if the two input states are equal.
         Only test the 4 first components (x, x_dot, theta, theta_dot)
-        '''
+        """
         for i in range(4):
             if not math.isclose(s1[i], s2[i], rel_tol=1e-5):
                 return False
@@ -84,15 +84,14 @@ class NSCartPoleV2(gym.Env):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
 
-    def transition(self, state, action, is_model_dynamic):
-        '''
-        Transition operator, return the resulting state, reward and a boolean indicating
-        whether the termination criterion is reached or not.
-        The boolean is_model_dynamic indicates whether the temporal transition is applied
-        to the state vector or not (increment of tau).
-        '''
-        x, x_dot, theta, theta_dot, time = state
-        force = - self.force_mag + action * 2 * self.force_mag / (self.nb_actions - 1)
+    def transition_probability(self, s_p, s, t, a):
+
+    def deterministic_transition(self, s, a, is_model_dynamic):
+        """
+        Perform a deterministic transition and return the resulting state.
+        """
+        x, x_dot, theta, theta_dot, time = s
+        force = - self.force_mag + a * 2 * self.force_mag / (self.nb_actions - 1)
         costheta = math.cos(theta)
         sintheta = math.sin(theta)
         temp = (force + self.polemass_length * theta_dot * theta_dot * sintheta) / self.total_mass
@@ -104,12 +103,20 @@ class NSCartPoleV2(gym.Env):
         theta_dot = theta_dot + self.tau * thetaacc
         if is_model_dynamic:
             time = time + self.tau
-        state_p = (x, x_dot, theta, theta_dot, time)
+        return (x, x_dot, theta, theta_dot, time)
+
+    def transition(self, state, action, is_model_dynamic):
+        """
+        Transition operator, return the resulting state, reward and a boolean indicating
+        whether the termination criterion is reached or not.
+        The boolean is_model_dynamic indicates whether the temporal transition is applied
+        to the state vector or not (increment of tau).
+        """
+        state_p = self.deterministic_transition(state, action, is_model_dynamic)
         if self.is_stochastic:
             noise = self.noise_magnitude * np.random.randint(low=-1, high=2, size=4)
             noise = np.append(noise, [0.0])
             state_p = tuple(state_p + noise)
-
         # Termination criterion
         self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
         done =  x < -self.x_threshold \
@@ -125,11 +132,11 @@ class NSCartPoleV2(gym.Env):
         return state_p, reward, done
 
     def step(self, action):
-        '''
+        """
         Step function equivalent to transition and reward function.
         Actually modifies the environment's state attribute.
         Return (observation, reward, termination criterion (boolean), informations)
-        '''
+        """
         assert self.action_space.contains(action), "%r (%s) invalid"%(action, type(action))
         self.state, reward, done = self.transition(self.state, action, True)
         return np.array(self.state), reward, done, {}
