@@ -129,6 +129,7 @@ class NSCartPoleV2(gym.Env):
             noise = np.append(noise, [0.0])
             state_p = tuple(state_p + noise)
         # Termination criterion
+        x, x_dot, theta, theta_dot, time = state_p
         self.delta = self.oscillation_magnitude * math.sin(time * 6.28318530718 / self.oscillation_period)
         done =  x < -self.x_threshold \
                 or x > self.x_threshold \
