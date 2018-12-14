@@ -30,8 +30,10 @@ class NSCartPoleV2(gym.Env):
         self.force_mag = 10.0
         self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
-        self.is_stochastic = is_stochastic # are transitions stochastic
-        self.noise_scale = 0.01
+
+        # Are transitions stochastic (max mag: [2.42287677 3.44365148 0.59117063 3.93776768])
+        self.is_stochastic = is_stochastic
+        self.noise_magnitude = np.array([0.0, 0.05, 0.0, 0.05])
 
         # Angle at which to fail the episode
         self.x_threshold = 2.4
@@ -75,6 +77,9 @@ class NSCartPoleV2(gym.Env):
         self.steps_beyond_done = None
         return np.array(self.state)
 
+    def get_time(self):
+        return self.state[-1]
+
     def _seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -101,7 +106,7 @@ class NSCartPoleV2(gym.Env):
             time = time + self.tau
         state_p = (x, x_dot, theta, theta_dot, time)
         if self.is_stochastic:
-            noise = np.random.normal(loc=0.0, scale=self.noise_scale, size=4)
+            noise = self.noise_magnitude * np.random.randint(low=-1, high=2, size=4)
             noise = np.append(noise, [0.0])
             state_p = tuple(state_p + noise)
 
