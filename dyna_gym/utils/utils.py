@@ -24,3 +24,15 @@ def assert_types(p, types_list):
     assert len(p) == len(types_list), 'Error: expected {} parameters received {}'.format(len(types_list), len(p))
     for i in range(len(p)):
         assert type(p[i]) == types_list[i], 'Error: wrong type, expected {}, received {}'.format(types_list[i], type(p[i]))
+
+def amax(v):
+    """
+    Return the higher value and its index given an array of values.
+    """
+    #TODO test
+    vmax, index = v[0], 0
+    for i in range(1, len(v)):
+        if v[i] > vmax:
+            vmax = v[i]
+            index = i
+    return vmax, index
