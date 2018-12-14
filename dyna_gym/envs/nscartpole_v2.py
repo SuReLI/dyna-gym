@@ -31,6 +31,8 @@ class NSCartPoleV2(gym.Env):
         self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
+        self.L_p = 0.1
+
         # Are transitions stochastic (max mag: [2.42287677 3.44365148 0.59117063 3.93776768])
         self.is_stochastic = is_stochastic
         self.noise_magnitude = np.array([0.0, 0.05, 0.0, 0.05])
@@ -88,18 +90,8 @@ class NSCartPoleV2(gym.Env):
         """
         Return the distance between the two input states.
         """
-        s1 = s1[0:3]
-        s2 = s2[0:3]
-
-        d1 = np.linalg.norm(s1-s2, ord=2)
-        d2 = 0.0
-        for i in range(4):
-            d2 += (s1[i] - s2[i])**2
-        d2 = math.sqrt(d2)
-        print(d1, d2)
-        assert(d1 == d2)
-
-
+        s1 = s1[0:4]
+        s2 = s2[0:4]
         return np.linalg.norm(s1-s2, ord=2)
 
     def distances_matrix(self, states):

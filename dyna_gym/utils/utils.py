@@ -29,7 +29,6 @@ def amax(v):
     """
     Return the higher value and its index given an array of values.
     """
-    #TODO test
     vmax, index = v[0], 0
     for i in range(1, len(v)):
         if v[i] > vmax:

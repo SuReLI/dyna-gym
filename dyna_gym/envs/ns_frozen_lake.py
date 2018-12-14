@@ -118,7 +118,7 @@ class NSFrozenLakeEnv(Env):
         self.nT = 40 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
-        self.timestep = 1 # timestep duration
+        self.tau = 1 # timestep duration
         self.L_p = 0.2 # transition kernel Lipschitz constant
         self.L_r = 0.0 # reward function Lipschitz constant
         self.T = self.generate_transition_matrix()
@@ -247,7 +247,7 @@ class NSFrozenLakeEnv(Env):
                 D = self.distances_matrix(states)
                 # Build subsequent distributions st LC constraint is respected
                 for t in range(1, self.nT): # t
-                    w = distribution.random_constrained(w, D, self.L_p * self.timestep)
+                    w = distribution.random_constrained(w, D, self.L_p * self.tau)
                     wcopy = list(w.copy())
                     T[s,a,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
         return T
@@ -277,7 +277,7 @@ class NSFrozenLakeEnv(Env):
         srs = []
         for i in range(len(rs)):
             if rs[i] == 1:
-                srs.append(State(i, s.time + self.timestep))
+                srs.append(State(i, s.time + self.tau))
         assert (len(srs) == sum(rs))
         return np.array(srs)
 
@@ -304,7 +304,7 @@ class NSFrozenLakeEnv(Env):
         d = self.transition_probability_distribution(s, s.time, a)
         p_p = categorical_sample(d, self.np_random)
         if is_model_dynamic:
-            s_p = State(p_p, s.time + self.timestep)
+            s_p = State(p_p, s.time + self.tau)
         else:
             s_p = State(p_p, s.time)
         r = self.instant_reward(s, s.time, a, s_p)
@@ -331,7 +331,7 @@ class NSFrozenLakeEnv(Env):
         R = 0.0
         d = self.transition_probability_distribution(s, t, a)
         for i in range(len(d)):
-            s_p = State(i, s.time + self.timestep)
+            s_p = State(i, s.time + self.tau)
             r_i = self.instant_reward(s, t, a, s_p)
             R += r_i * d[i]
         return R
@@ -343,7 +343,7 @@ class NSFrozenLakeEnv(Env):
         row, col = self.to_m(s.index)
         letter = self.desc[row, col]
         done = bytes(letter) in b'GH'
-        if s.time + self.timestep >= self.nT: # Timeout
+        if s.time + self.tau >= self.nT: # Timeout
             done = True
         return done
 
