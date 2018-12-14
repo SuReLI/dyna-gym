@@ -62,7 +62,6 @@ class UCT(object):
         """
         Upper Confidence Bound of a chance node
         """
-        print(node.parent.visits, len(node.sampled_returns))#TRM
         return mcts.chance_node_value(node) + self.ucb_constant * sqrt(log(node.parent.visits)/len(node.sampled_returns))
 
     def act(self, env, done):

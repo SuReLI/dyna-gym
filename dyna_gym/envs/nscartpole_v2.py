@@ -31,8 +31,6 @@ class NSCartPoleV2(gym.Env):
         self.nb_actions = 3 # number of discrete actions in [-force_mag,+force_mag]
         self.tau = 0.02  # seconds between state updates
 
-        self.L_p = 0.1
-
         # Are transitions stochastic (max mag: [2.42287677 3.44365148 0.59117063 3.93776768])
         self.is_stochastic = is_stochastic
         self.noise_magnitude = np.array([0.0, 0.05, 0.0, 0.05])

@@ -66,7 +66,7 @@ def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_p
         env = gym.make(env_name)
         if verbose:
             print('Created environment', _env+1, '/', n_env)
-            env.display()
+            #env.display()
         for _agt in range(n_agt):
             agt_name = agent_name_pool[_agt]
             agt = agent_pool[_agt]
@@ -127,7 +127,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
         env = gym.make(env_name)
         if verbose:
             print('Created environment', _env+1, '/', n_env)
-            env.display()
+            #env.display()
         for _agt in range(n_agt):
             agt_name = agent_name_pool[_agt]
             agt = agent_pool[_agt]

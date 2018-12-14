@@ -109,8 +109,7 @@ def mcts_procedure(ag, tree_policy, env, done):
                 estimate = rewards.pop() + ag.gamma * estimate
             node.parent.visits += 1
             node = node.parent.parent
-    #for ch in root.children:#TRM
-    #    print('a :', ch.action, 'v :', chance_node_value(ch))
+
     return max(root.children, key=chance_node_value).action
 
 class DecisionNode:
