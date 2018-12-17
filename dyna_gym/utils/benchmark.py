@@ -94,6 +94,10 @@ def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_pr
         score = run(agt, env, tmax)
         if save:
             saving_pool.append([env_name, _env, agt_name, _prm] + prm + [_thr, score])
+            if len(saving_pool) == 8:
+                for row in saving_pool:
+                    csv_write(row, path, 'a')
+                saving_pool = []
     if save:
         for row in saving_pool:
             csv_write(row, path, 'a')
