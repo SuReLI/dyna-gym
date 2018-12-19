@@ -16,6 +16,11 @@ register(
 )
 
 register(
+    id='NSCliff-v0',
+    entry_point='dyna_gym.envs:NSCliffV0',
+)
+
+register(
     id='NSCartPole-v0',
     entry_point='dyna_gym.envs:NSCartPoleV0',
 )

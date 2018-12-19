@@ -33,23 +33,6 @@ class State:
         self.index = index
         self.time = time
 
-def random_map(map_size):
-    nR, nC = map_size
-    nH = int(0.2 * nR * nC) # Number of holes
-    m = []
-    for i in range(nR): # Generate ice floe
-        m.append(nC * ["F"])
-    m[0][0] = "S" # Generate start
-    m[-1][-1] = "G" # Generate goal
-    while nH > 0: # Generate holes
-        i, j = (randint(0, nR-1), randint(0, nC-1))
-        if m[i][j] is "F":
-            m[i][j] = "H"
-            nH -= 1
-    for i in range(nR): # Formating
-        m[i] = "".join(m[i])
-    return m
-
 def categorical_sample(prob_n, np_random):
     """
     Sample from categorical distribution
@@ -59,45 +42,18 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
-class NSFrozenLakeV0(Env):
+class NSCliffV0(Env):
     """
-    Winter is here. You and your friends were tossing around a frisbee at the park
-    when you made a wild throw that left the frisbee out in the middle of the lake.
-    The water is mostly frozen, but there are a few holes where the ice has melted.
-    If you step into one of those holes, you'll fall into the freezing water.
-    At this time, there's an international frisbee shortage, so it's absolutely imperative that
-    you navigate across the lake and retrieve the disc.
-    However, the ice is slippery, so you won't always move in the direction you intend.
-    The surface is described using a grid like the following
-
-        SFFF
-        FHFH
-        FFFH
-        HFFG
-
-    S : starting point, safe
-    F : frozen surface, safe
-    H : hole, fall to your doom
-    G : goal, where the frisbee is located
-
-    The episode ends when you reach the goal or fall in a hole.
-    You receive a reward of 1 if you reach the goal, and zero otherwise.
-
-    Non-Stationarity: when the transition function is stochastic , i.e. slippery ice,
-    the probability of the resulting states from any action evolves randomly through
-    time. The resulting transition function is L_p-Lipschitz.
+    Non Stationary grid-world representing a cliff.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="4x4", map_size=(5,5), is_slippery=True):
+    def __init__(self, desc=None, map_name="cliff3x3", is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
-            if map_name is "random":
-                desc = random_map(map_size)
-            else:
-                desc = MAPS[map_name]
+            desc = MAPS[map_name]
         self.desc = desc = np.asarray(desc, dtype='c')
         self.nrow, self.ncol = nrow, ncol = desc.shape
 
@@ -107,10 +63,10 @@ class NSFrozenLakeV0(Env):
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 0.2 # transition kernel Lipschitz constant
-        self.L_r = 0.0 # reward function Lipschitz constant
+        self.L_p = 0.2
+        self.L_r = 0.0
         self.T = self.generate_transition_matrix()
-        isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
+        isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
         self._seed()
         self.reset()
