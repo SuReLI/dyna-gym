@@ -147,6 +147,8 @@ class NSCliffV0(Env):
             assert (type(s) == int), 'Error: input state has wrong type: type={}'.format(type(s))
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
+
+        '''
         if self.is_slippery:
             for b in [(a-1)%4, a, (a+1)%4]:
                 newrow, newcol = self.inc(row, col, b)
@@ -154,6 +156,11 @@ class NSCliffV0(Env):
         else:
             newrow, newcol = self.inc(row, col, a)
             rs[self.to_s(newrow, newcol)] = 1
+        '''
+        newrow, newcol = self.inc(row, col, a)
+        rs[self.to_s(newrow, newcol)] = 1
+        if newrow+1 < self.nrow:
+            rs[self.to_s(newrow+1, newcol)] = 1
         return rs
 
     def distances_matrix(self, states):
@@ -174,16 +181,17 @@ class NSCliffV0(Env):
         for s in range(self.nS):
             for a in range(self.nA):
                 # Generate distribution for t=0
-                rs = self.reachable_states(s, a)
-                nrs = np.sum(rs)
-                w = distribution.random_tabular(size=nrs)
-                wcopy = list(w.copy())
-                T[s,a,0,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
+                #rs = self.reachable_states(s, a)
+
+                T[s,a,0,:] = np.zeros(shape=self.nS)
                 row, col = self.to_m(s)
                 row_p, col_p = self.inc(row, col, a)
                 s_p = self.to_s(row_p, col_p)
-                T[s,a,0,s_p] += 1.0 # Increase weight on normally reached state
-                T[s,a,0,:] /= sum(T[s,a,0,:])
+                T[s,a,0,s_p] += 1.0
+
+                print(T[s,a,0,:])
+                exit()
+
                 states = []
                 for k in range(len(rs)):
                     if rs[k] == 1:
