@@ -78,6 +78,7 @@ class NSFrozenLakeV1(Env):
     At this time, there's an international frisbee shortage, so it's absolutely imperative that
     you navigate across the lake and retrieve the disc.
     However, the ice is slippery, so you won't always move in the direction you intend.
+    NSFrozenLake-v1 allows for 4 possible resulting directions while NSFrozenLake-v0 allows for 3.
     The surface is described using a grid like the following
 
         SFFF
@@ -202,7 +203,7 @@ class NSFrozenLakeV1(Env):
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
         if self.is_slippery:
-            for b in [(a-1)%4, a, (a+1)%4]:
+            for b in range(4):
                 newrow, newcol = self.inc(row, col, b)
                 rs[self.to_s(newrow, newcol)] = 1
         else:
@@ -229,6 +230,9 @@ class NSFrozenLakeV1(Env):
             for a in range(self.nA):
                 # Generate distribution for t=0
                 rs = self.reachable_states(s, a)
+                print(s)
+                print(rs)
+
                 nrs = np.sum(rs)
                 w = distribution.random_tabular(size=nrs)
                 wcopy = list(w.copy())
