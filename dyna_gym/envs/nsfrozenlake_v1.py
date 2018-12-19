@@ -12,11 +12,6 @@ RIGHT = 2
 UP = 3
 
 MAPS = {
-    "cliff": [
-        "FFF",
-        "FFF",
-        "SHG"
-    ],
     "4x4": [
         "SFFF",
         "FHFH",
@@ -118,7 +113,7 @@ class NSFrozenLakeV1(Env):
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 0.2 # transition kernel Lipschitz constant
+        self.L_p = 1.0 # transition kernel Lipschitz constant
         self.L_r = 0.0 # reward function Lipschitz constant
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
@@ -230,9 +225,6 @@ class NSFrozenLakeV1(Env):
             for a in range(self.nA):
                 # Generate distribution for t=0
                 rs = self.reachable_states(s, a)
-                print(s)
-                print(rs)
-
                 nrs = np.sum(rs)
                 w = distribution.random_tabular(size=nrs)
                 wcopy = list(w.copy())

@@ -12,22 +12,17 @@ RIGHT = 2
 UP = 3
 
 MAPS = {
-    "4x4": [
-        "SFFF",
-        "FHFH",
-        "FFFH",
-        "HFFG"
+    "cliff3x3": [
+        "FFF",
+        "FFF",
+        "SHG"
     ],
-    "8x8": [
-        "SFFFFFFF",
-        "FFFFFFFF",
-        "FFFHFFFF",
-        "FFFFFHFF",
-        "FFFHFFFF",
-        "FHHFFFHF",
-        "FHFFHFHF",
-        "FFFHFFFG"
-    ],
+    "cliff4x5": [
+        "FFFFF",
+        "FFFFF",
+        "FFFFF",
+        "SHHHG"
+    ]
 }
 
 class State:
