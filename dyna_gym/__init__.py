@@ -1,18 +1,18 @@
 from gym.envs.registration import register
 
 register(
-    id='NSChain-v0',
-    entry_point='dyna_gym.envs:NSChain',
-)
-
-register(
     id='RandomNSMDP-v0',
     entry_point='dyna_gym.envs:RandomNSMDP',
 )
 
 register(
-    id='NSFrozenLakeEnv-v0',
-    entry_point='dyna_gym.envs:NSFrozenLakeEnv',
+    id='NSFrozenLake-v0',
+    entry_point='dyna_gym.envs:NSFrozenLakeV0',
+)
+
+register(
+    id='NSFrozenLake-v1',
+    entry_point='dyna_gym.envs:NSFrozenLakeV1',
 )
 
 register(

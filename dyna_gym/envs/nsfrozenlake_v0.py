@@ -1,7 +1,6 @@
 import numpy as np
 import sys
 import dyna_gym.utils.distribution as distribution
-#from dyna_gym.envs.tabular_nsmdp import TabularNSMDP
 from random import randint
 from six import StringIO, b
 from gym import Env, spaces, utils
@@ -17,11 +16,6 @@ MAPS = {
         "FFF",
         "FFF",
         "SHG"
-    ],
-    "toy": [
-        "FSH",
-        "FFH",
-        "GFH"
     ],
     "4x4": [
         "SFFF",
@@ -75,7 +69,7 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
-class NSFrozenLakeEnv(Env):
+class NSFrozenLakeV0(Env):
     """
     Winter is here. You and your friends were tossing around a frisbee at the park
     when you made a wild throw that left the frisbee out in the middle of the lake.
@@ -98,6 +92,10 @@ class NSFrozenLakeEnv(Env):
 
     The episode ends when you reach the goal or fall in a hole.
     You receive a reward of 1 if you reach the goal, and zero otherwise.
+
+    Non-Stationarity: when the transition function is stochastic , i.e. slippery ice,
+    the probability of the resulting states from any action evolves randomly through
+    time. The resulting transition function is L_p-Lipschitz.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
