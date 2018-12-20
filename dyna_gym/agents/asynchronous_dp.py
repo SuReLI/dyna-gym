@@ -159,11 +159,16 @@ class AsynDP(object):
     def heuristic_value(self, node, env):
         return 0.0
 
-    def test(self, node):
-        assert(node.state.time == self.t_call)
-        for ch in node.children:
-            for chch in ch.children:
-                self.test(chch)
+    def test(self, v):
+        print('s0 :', v.state.index, 'value :', v.value)
+        for c in v.children:
+            print('-> a', c.action, 'value :', c.value)
+            for cc in c.children:
+                print('      s1 :', cc.state.index, 'weight :', cc.weight, 'value :', cc.value)
+                for ccc in cc.children:
+                    print('         a', ccc.action, 'value :', ccc.value)
+                    for cccc in ccc.children:
+                        print('            s2 :', cccc.state.index, 'weight :', cccc.weight, 'value :', cccc.value)
 
     def act(self, env, done):
         """
@@ -172,4 +177,6 @@ class AsynDP(object):
         self.t_call = env.get_time()
         root = self.initialize_tree(env, done)
         self.fill_tree(root, env)
+        self.test(root)
+        exit()
         return max(root.children, key=node_value).action
