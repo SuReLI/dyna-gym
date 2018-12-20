@@ -59,7 +59,7 @@ class NSCliffV0(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 40 # n timesteps
+        self.nT = 10 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
@@ -180,28 +180,31 @@ class NSCliffV0(Env):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
         for s in range(self.nS):
             for a in range(self.nA):
-                # Generate distribution for t=0
-                #rs = self.reachable_states(s, a)
-
                 T[s,a,0,:] = np.zeros(shape=self.nS)
                 row, col = self.to_m(s)
                 row_p, col_p = self.inc(row, col, a)
                 s_p = self.to_s(row_p, col_p)
                 T[s,a,0,s_p] += 1.0
-
-                print(T[s,a,0,:])
-                exit()
-
-                states = []
-                for k in range(len(rs)):
-                    if rs[k] == 1:
-                        states.append(State(k,0))
-                D = self.distances_matrix(states)
-                # Build subsequent distributions st LC constraint is respected
-                for t in range(1, self.nT): # t
-                    w = distribution.random_constrained(w, D, self.L_p * self.tau)
-                    wcopy = list(w.copy())
-                    T[s,a,t,:] = np.asarray([0 if x == 0 else wcopy.pop() for x in rs], dtype=float)
+                rs = self.reachable_states(s, a)
+                nrs = sum(rs)
+                if nrs == 1:
+                    T[s,a,:,:] = T[s,a,0,:]
+                else:
+                    for i in range(len(rs)):
+                        if (rs[i] == 1) and (T[s,a,0,i] == 1):
+                            sp_norm = i
+                        if (rs[i] == 1) and (T[s,a,0,i] == 0):
+                            sp_down = i
+                    w0 = np.array(T[s,a,0,:])
+                    wsat = np.zeros(shape=w0.shape)
+                    wsat[sp_down] = 1.0
+                    D = self.distances_matrix(range(self.nS))
+                    l = self.tau * self.L_p / distribution.wass_dual(w0, wsat, D)
+                    for t in range(1, self.nT):
+                        if l * t < 1.0:
+                            T[s,a,t,:] = (1 - l * t) * w0 + t * l * wsat
+                        else:
+                            T[s,a,t,:] = wsat
         return T
 
     def transition_probability_distribution(self, s, t, a):
