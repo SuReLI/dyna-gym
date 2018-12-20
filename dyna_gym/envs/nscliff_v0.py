@@ -13,9 +13,9 @@ UP = 3
 
 MAPS = {
     "cliff3x3": [
-        "FFF",
-        "FFF",
-        "SHG"
+        "FFFF",
+        "SFFF",
+        "HHHG"
     ],
     "cliff4x5": [
         "FFFFF",
@@ -63,7 +63,7 @@ class NSCliffV0(Env):
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 0.2
+        self.L_p = 0.1
         self.L_r = 0.0
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
@@ -242,12 +242,12 @@ class NSCliffV0(Env):
         Static means that no time increment is performed.
         """
         rs = self.reachable_states(s, a)
-        srs = []
+        drs = []
         for i in range(len(rs)):
             if rs[i] == 1:
-                srs.append(State(i, s.time))
-        assert (len(srs) == sum(rs))
-        return np.array(srs)
+                drs.append(State(i, s.time))
+        assert (len(drs) == sum(rs))
+        return np.array(drs)
 
     def transition(self, s, a, is_model_dynamic=True):
         """

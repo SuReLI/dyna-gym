@@ -73,11 +73,11 @@ class AsynDP(object):
         Display infos about the attributes
         """
         print('Displaying AsynDP agent:')
-        print('Action space       :', self.action_space)
-        print('Number of actions  :', self.n_actions)
-        print('Gamma              :', self.gamma)
-        print('Maximum depth      :', self.max_depth)
-        print('Is model dynamic   :', self.is_model_dynamic)
+        print('Action space      :', self.action_space)
+        print('Number of actions :', self.n_actions)
+        print('Gamma             :', self.gamma)
+        print('Maximum depth     :', self.max_depth)
+        print('Is model dynamic  :', self.is_model_dynamic)
 
     def build_tree(self, node, env):
         if type(node) is DecisionNode: #DecisionNode
@@ -158,6 +158,12 @@ class AsynDP(object):
 
     def heuristic_value(self, node, env):
         return 0.0
+
+    def test(self, node):
+        assert(node.state.time == self.t_call)
+        for ch in node.children:
+            for chch in ch.children:
+                self.test(chch)
 
     def act(self, env, done):
         """
