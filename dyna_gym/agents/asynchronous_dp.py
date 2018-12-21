@@ -108,7 +108,11 @@ class AsynDP(object):
                         )
                     )
         for ch in node.children:
-            self.build_tree(ch, env)
+            if type(ch) is DecisionNode:
+                if not ch.is_terminal:
+                    self.build_tree(ch, env)
+            else: #ChanceNode
+                self.build_tree(ch, env)
 
     def initialize_tree(self, env, done):
         """
@@ -145,7 +149,7 @@ class AsynDP(object):
                 node.value = v
         else: # ChanceNode
             v = 0.0
-            for ch in node.children: # pessimistic look-ahead values
+            for ch in node.children:
                 v += ch.weight * self.fill_tree(ch, env)
             v *= self.gamma
             if self.is_model_dynamic:
