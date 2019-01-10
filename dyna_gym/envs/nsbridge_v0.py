@@ -68,13 +68,6 @@ class NSBridgeV0(Env):
         self._seed()
         self.reset()
 
-        self.render()
-        rs = self.reachable_states(10,1)
-        for i in range(len(rs)):
-            if rs[i] == 1:
-                print(i)
-        exit()
-
 
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
