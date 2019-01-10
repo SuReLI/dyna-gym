@@ -138,9 +138,12 @@ class AsynDP(object):
         Fill the tree with Bellman equation updates and bootstraps with heuristic function.
         """
         if (type(node) is DecisionNode):
-            if (node.is_terminal or (node.depth == self.max_depth)):
+            if (node.depth == self.max_depth):
                 assert node.value == None, 'Error: node value={}'.format(node.value)
                 node.value = self.heuristic_value(node, env)
+            elif node.is_terminal:
+                assert node.value == None, 'Error: node value={}'.format(node.value)
+                node.value = env.instant_reward(node.parent.parent.state, self.t_call, node.parent.action, node.state)
             else:
                 v = -1e99
                 for ch in node.children:
@@ -164,15 +167,15 @@ class AsynDP(object):
         return 0.0
 
     def test(self, v):
-        print('s0 :', v.state.index, 'value :', v.value)
+        print('s0 :', v.state.index, 'value :', v.value, 'terminal :', v.is_terminal)
         for c in v.children:
             print('-> a', c.action, 'value :', c.value)
             for cc in c.children:
-                print('      s1 :', cc.state.index, 'weight :', cc.weight, 'value :', cc.value)
+                print('      s1 :', cc.state.index, 'weight :', cc.weight, 'value :', cc.value, 'terminal :', cc.is_terminal)
                 for ccc in cc.children:
                     print('         a', ccc.action, 'value :', ccc.value)
                     for cccc in ccc.children:
-                        print('            s2 :', cccc.state.index, 'weight :', cccc.weight, 'value :', cccc.value)
+                        print('            s2 :', cccc.state.index, 'weight :', cccc.weight, 'value :', cccc.value, 'terminal :', cccc.is_terminal)
 
     def act(self, env, done):
         """
@@ -181,6 +184,4 @@ class AsynDP(object):
         self.t_call = env.get_time()
         root = self.initialize_tree(env, done)
         self.fill_tree(root, env)
-        self.test(root)
-        exit()
         return max(root.children, key=node_value).action
