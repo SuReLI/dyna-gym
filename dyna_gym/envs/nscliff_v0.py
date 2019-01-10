@@ -12,7 +12,7 @@ RIGHT = 2
 UP = 3
 
 MAPS = {
-    "cliff3x3": [
+    "cliff3x4": [
         "FFFF",
         "SFFF",
         "HHHG"
@@ -49,7 +49,7 @@ class NSCliffV0(Env):
 
     metadata = {'render.modes': ['human', 'ansi']}
 
-    def __init__(self, desc=None, map_name="cliff3x3", is_slippery=True):
+    def __init__(self, desc=None, map_name="cliff3x4", is_slippery=True):
         if desc is None and map_name is None:
             raise ValueError('Must provide either desc or map_name')
         elif desc is None:
