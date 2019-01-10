@@ -68,7 +68,6 @@ class NSBridgeV0(Env):
         self._seed()
         self.reset()
 
-
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
         return [seed]
@@ -170,32 +169,34 @@ class NSBridgeV0(Env):
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
         for s in range(self.nS):
-            for a in range(self.nA):
-                T[s,a,0,:] = np.zeros(shape=self.nS)
-                row, col = self.to_m(s)
-                row_p, col_p = self.inc(row, col, a)
-                s_p = self.to_s(row_p, col_p)
-                T[s,a,0,s_p] += 1.0
-                rs = self.reachable_states(s, a)
-                nrs = sum(rs)
-                if nrs == 1:
-                    T[s,a,:,:] = T[s,a,0,:]
-                else:
-                    w0 = np.array(T[s,a,0,:])
-
-                    wsat = np.zeros(shape=w0.shape)
-                    wsat[s_p] = 0.1
-                    wslip = (1 - wsat[s_p]) / float(nrs - 1)
-                    for i in range(len(rs)):
-                        if (rs[i] == 1) and (i != s_p):
-                            wsat[i] = wslip
-                    D = self.distances_matrix(range(self.nS))
-                    l = self.tau * self.L_p / distribution.wass_dual(w0, wsat, D)
-                    for t in range(1, self.nT):
-                        if l * t < 1.0:
-                            T[s,a,t,:] = (1 - l * t) * w0 + t * l * wsat
-                        else:
-                            T[s,a,t,:] = wsat
+            row, col = self.to_m(s)
+            letter = self.desc[row, col]
+            if letter != b'H': # s is not a Hole
+                for a in range(self.nA):
+                    T[s,a,0,:] = np.zeros(shape=self.nS)
+                    #row, col = self.to_m(s)
+                    row_p, col_p = self.inc(row, col, a)
+                    s_p = self.to_s(row_p, col_p)
+                    T[s,a,0,s_p] += 1.0
+                    rs = self.reachable_states(s, a)
+                    nrs = sum(rs)
+                    if nrs == 1:
+                        T[s,a,:,:] = T[s,a,0,:]
+                    else:
+                        w0 = np.array(T[s,a,0,:])
+                        wsat = np.zeros(shape=w0.shape)
+                        wsat[s_p] = 0.1
+                        wslip = (1 - wsat[s_p]) / float(nrs - 1)
+                        for i in range(len(rs)):
+                            if (rs[i] == 1) and (i != s_p):
+                                wsat[i] = wslip
+                        D = self.distances_matrix(range(self.nS))
+                        l = self.tau * self.L_p / distribution.wass_dual(w0, wsat, D)
+                        for t in range(1, self.nT):
+                            if l * t < 1.0:
+                                T[s,a,t,:] = (1 - l * t) * w0 + t * l * wsat
+                            else:
+                                T[s,a,t,:] = wsat
         return T
 
     def transition_probability_distribution(self, s, t, a):
