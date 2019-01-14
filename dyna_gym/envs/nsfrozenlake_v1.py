@@ -135,7 +135,7 @@ class NSFrozenLakeV1(Env):
         return self.state
 
     def display(self):
-        print('Displaying NSFrozenLakeEnv-v0')
+        print('Displaying NSFrozenLakeEnv-v1')
         print('map       :')
         print(self.desc)
         print('n states  :', self.nS)

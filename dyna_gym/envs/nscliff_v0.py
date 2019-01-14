@@ -63,7 +63,7 @@ class NSCliffV0(Env):
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 0.2
+        self.L_p = 1.0
         self.L_r = 0.0
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
