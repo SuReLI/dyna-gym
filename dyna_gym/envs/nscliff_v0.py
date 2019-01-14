@@ -197,7 +197,9 @@ class NSCliffV0(Env):
                             sp_down = i
                     w0 = np.array(T[s,a,0,:])
                     wsat = np.zeros(shape=w0.shape)
-                    wsat[sp_down] = 1.0
+                    wsat[sp_norm] = 0.1
+                    wsat[sp_down] = 0.9
+                    #wsat[sp_down] = 1.0
                     D = self.distances_matrix(range(self.nS))
                     l = self.tau * self.L_p / distribution.wass_dual(w0, wsat, D)
                     for t in range(1, self.nT):
