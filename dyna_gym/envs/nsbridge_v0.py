@@ -41,7 +41,7 @@ def categorical_sample(prob_n, np_random):
 class NSBridgeV0(Env):
     """
     Non Stationary grid-world representing a bridge.
-    The more the time goes by, the more slippery it becomes.
+    As time goes by, it gets slippery.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
