@@ -5,6 +5,7 @@ Require:
 agent.reset(param)
 agent.display()
 agent.act(env, done)
+agent.gamma
 
 env.reset()
 """
@@ -25,20 +26,23 @@ def csv_write(row, path, mode):
 def run(agent, env, tmax, verbose=False):
     """
     Run single episode
+    Return: (cumulative_reward, total_time, total_return)
     """
     done = False
-    cr = 0.0
+    cumulative_reward, total_time, total_return = 0.0, 0, 0.0
     if verbose:
         env.render()
     for t in range(tmax):
         action = agent.act(env,done)
         _, r, done, _ = env.step(action)
-        cr += r
+        cumulative_reward += r
+        total_return += (agent.gamma**t) * r
         if verbose:
             env.render()
         if (t+1 == tmax) or done:
+            total_time = t+1
             break
-    return cr
+    return cumulative_reward, total_time, total_return
 
 def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, verbose=True):
     """
@@ -61,7 +65,7 @@ def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_p
     if save:
         assert len(paths_pool) == n_agt
         for _agt in range(n_agt): # Init save files for each agent
-            csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_pool[_agt] + ['epi_number', 'score'], paths_pool[_agt], 'w')
+            csv_write(['env_name', 'env_number', 'agent_name', 'agent_number'] + param_names_pool[_agt] + ['epi_number', 'cumulative_reward', 'total_time', 'total_return'], paths_pool[_agt], 'w')
     for _env in range(n_env):
         env = gym.make(env_name)
         if verbose:
@@ -81,9 +85,9 @@ def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_p
                     if verbose:
                         print('Environment', env_name, _env+1, '/', n_env, 'agent', agt_name, _prm+1, '/', n_prm,'running episode', _epi+1, '/', n_epi)
                     env.reset()
-                    score = run(agt, env, tmax)
+                    cumulative_reward, total_time, total_return = run(agt, env, tmax)
                     if save:
-                        csv_write([env_name, _env, agt_name, _prm] + prm + [_epi, score], paths_pool[_agt], 'a')
+                        csv_write([env_name, _env, agt_name, _prm] + prm + [_epi, cumulative_reward, total_time, total_return], paths_pool[_agt], 'a')
 
 def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr, save, path, verbose):
     saving_pool = []
@@ -91,9 +95,9 @@ def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_pr
         if verbose:
             print('Environment', env_name, _env+1, '/', n_env, 'agent', agt_name, _prm+1, '/', n_prm,'running episode', _epi+1, '/', n_epi, '(thread nb', _thr, ')')
         env.reset()
-        score = run(agt, env, tmax)
+        cumulative_reward, total_time, total_return = run(agt, env, tmax)
         if save:
-            saving_pool.append([env_name, _env, agt_name, _prm] + prm + [_thr, score])
+            saving_pool.append([env_name, _env, agt_name, _prm] + prm + [_thr, cumulative_reward, total_time, total_return])
             if len(saving_pool) == 8:
                 for row in saving_pool:
                     csv_write(row, path, 'a')
@@ -126,7 +130,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
     if save:
         assert len(paths_pool) == n_agt
         for _agt in range(n_agt): # Init save files for each agent
-            csv_write(['env_name', 'env_number', 'agent_name', 'param_number'] + param_names_pool[_agt] + ['thread_number', 'score'], paths_pool[_agt], 'w')
+            csv_write(['env_name', 'env_number', 'agent_name', 'param_number'] + param_names_pool[_agt] + ['thread_number', 'cumulative_reward', 'total_time', 'total_return'], paths_pool[_agt], 'w')
     for _env in range(n_env):
         env = gym.make(env_name)
         if verbose:
