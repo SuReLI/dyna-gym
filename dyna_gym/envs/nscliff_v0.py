@@ -14,8 +14,8 @@ UP = 3
 MAPS = {
     "cliff3x4": [
         "FFFF",
-        "SFFF",
-        "HHHG"
+        "FFFF",
+        "SHHG"
     ],
     "cliff4x5": [
         "FFFFF",
@@ -59,7 +59,7 @@ class NSCliffV0(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 20 # n timesteps
+        self.nT = 21 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration

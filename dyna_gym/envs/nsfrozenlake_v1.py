@@ -109,12 +109,12 @@ class NSFrozenLakeV1(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 40 # n timesteps
+        self.nT = 21 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 1.0 # transition kernel Lipschitz constant
-        self.L_r = 0.0 # reward function Lipschitz constant
+        self.L_p = 1.0
+        self.L_r = 0.0
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
