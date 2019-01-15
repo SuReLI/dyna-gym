@@ -45,6 +45,7 @@ def categorical_sample(prob_n, np_random):
 class NSCliffV0(Env):
     """
     Non Stationary grid-world representing a cliff.
+    The transition function is non-stationary and tries to push the agent towards the hole.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}

@@ -5,6 +5,9 @@ Required attributes and functions of the environment:
 env.get_time()
 env.is_terminal(state)
 env.static_reachable_states(s, a)
+env.transition_probability
+env.expected_reward
+env.instant_reward
 """
 
 import random
@@ -143,7 +146,10 @@ class AsynDP(object):
                 node.value = self.heuristic_value(node, env)
             elif node.is_terminal:
                 assert node.value == None, 'Error: node value={}'.format(node.value)
-                node.value = env.instant_reward(node.parent.parent.state, self.t_call, node.parent.action, node.state)
+                if self.is_model_dynamic:
+                    node.value = env.instant_reward(node.parent.parent.state, node.parent.parent.state.time, node.parent.action, node.state)
+                else:
+                    node.value = env.instant_reward(node.parent.parent.state, self.t_call, node.parent.action, node.state)
             else:
                 v = -1e99
                 for ch in node.children:

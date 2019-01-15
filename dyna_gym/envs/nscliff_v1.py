@@ -45,6 +45,8 @@ def categorical_sample(prob_n, np_random):
 class NSCliffV1(Env):
     """
     Non Stationary grid-world representing a cliff.
+    The transition function is non-stationary and tries to push the agent towards the hole.
+    The reward function is non-stationary: random reward received anywhere and evolving randomly.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
@@ -147,7 +149,6 @@ class NSCliffV1(Env):
             assert (type(s) == int), 'Error: input state has wrong type: type={}'.format(type(s))
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
-
         '''
         if self.is_slippery:
             for b in [(a-1)%4, a, (a+1)%4]:
@@ -279,7 +280,7 @@ class NSCliffV1(Env):
         elif newletter == b'H':
             return -1.0
         else:
-            return 0.0
+            return self.R[s_p.index]
 
     def expected_reward(self, s, t, a):
         """
