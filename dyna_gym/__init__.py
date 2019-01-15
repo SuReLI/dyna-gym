@@ -21,6 +21,11 @@ register(
 )
 
 register(
+    id='NSCliff-v1',
+    entry_point='dyna_gym.envs:NSCliffV1',
+)
+
+register(
     id='NSBridge-v0',
     entry_point='dyna_gym.envs:NSBridgeV0',
 )

@@ -42,7 +42,7 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
-class NSCliffV0(Env):
+class NSCliffV1(Env):
     """
     Non Stationary grid-world representing a cliff.
     """
@@ -85,7 +85,7 @@ class NSCliffV0(Env):
         return self.state
 
     def display(self):
-        print('Displaying NSCliff-v0')
+        print('Displaying NSCliff-v1')
         print('map       :')
         print(self.desc)
         print('n states  :', self.nS)
