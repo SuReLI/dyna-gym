@@ -5,9 +5,10 @@ Required attributes and functions of the environment:
 env.get_time()
 env.is_terminal(state)
 env.static_reachable_states(s, a)
-env.transition_probability
-env.expected_reward
-env.instant_reward
+env.dynamic_reachable_states(s, a)
+env.transition_probability(s_p, s, t, a)
+env.instant_reward(s, t, a, s_p)
+env.expected_reward(s, t, a)
 """
 
 import random
