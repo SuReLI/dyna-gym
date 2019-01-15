@@ -108,12 +108,12 @@ class NSFrozenLakeV0(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 40 # n timesteps
+        self.nT = 21 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 0.2 # transition kernel Lipschitz constant
-        self.L_r = 0.0 # reward function Lipschitz constant
+        self.L_p = 1.0
+        self.L_r = 0.0
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
@@ -131,6 +131,7 @@ class NSFrozenLakeV0(Env):
         """
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
+        self.T = self.generate_transition_matrix()
         return self.state
 
     def display(self):
@@ -197,7 +198,8 @@ class NSFrozenLakeV0(Env):
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
         if self.is_slippery:
-            for b in [(a-1)%4, a, (a+1)%4]:
+            #for b in [(a-1)%4, a, (a+1)%4]:# Put back for 3 reachable states
+            for b in range(4):
                 newrow, newcol = self.inc(row, col, b)
                 rs[self.to_s(newrow, newcol)] = 1
         else:

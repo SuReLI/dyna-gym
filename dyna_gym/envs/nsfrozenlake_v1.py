@@ -73,7 +73,6 @@ class NSFrozenLakeV1(Env):
     At this time, there's an international frisbee shortage, so it's absolutely imperative that
     you navigate across the lake and retrieve the disc.
     However, the ice is slippery, so you won't always move in the direction you intend.
-    NSFrozenLake-v1 allows for 4 possible resulting directions while NSFrozenLake-v0 allows for 3.
     The surface is described using a grid like the following
 
         SFFF
@@ -92,6 +91,8 @@ class NSFrozenLakeV1(Env):
     Non-Stationarity: when the transition function is stochastic , i.e. slippery ice,
     the probability of the resulting states from any action evolves randomly through
     time. The resulting transition function is L_p-Lipschitz.
+
+    The reward function is non-stationary: random reward received anywhere and evolving randomly.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
@@ -114,8 +115,10 @@ class NSFrozenLakeV1(Env):
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
         self.L_p = 1.0
-        self.L_r = 0.0
+        self.L_r = 0.1
+        self.rmax = 0.1 # Magnitude of the maximum reachable reward by a F cell
         self.T = self.generate_transition_matrix()
+        self.R = self.generate_instant_reward_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
         self._seed()
@@ -132,6 +135,8 @@ class NSFrozenLakeV1(Env):
         """
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
+        self.T = self.generate_transition_matrix()
+        self.R = self.generate_instant_reward_matrix()
         return self.state
 
     def display(self):
@@ -198,6 +203,7 @@ class NSFrozenLakeV1(Env):
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
         if self.is_slippery:
+            #for b in [(a-1)%4, a, (a+1)%4]:# Put back for 3 reachable states
             for b in range(4):
                 newrow, newcol = self.inc(row, col, b)
                 rs[self.to_s(newrow, newcol)] = 1
@@ -218,6 +224,18 @@ class NSFrozenLakeV1(Env):
                 D[i,j] = self.distance(states[i], states[j])
                 D[j,i] = self.distance(states[i], states[j])
         return D
+
+    def generate_instant_reward_matrix(self):
+        R = np.zeros(shape=(self.nS, self.nT), dtype=float)
+        for i in range(self.nS):
+            R[i][0] = np.random.uniform(low=-self.rmax, high=self.rmax)
+            for j in range(1, self.nT):
+                R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)
+                if R[i][j] > self.rmax:
+                    R[i][j] = self.rmax
+                elif R[i][j] < -self.rmax:
+                    R[i][j] = -self.rmax
+        return R
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
@@ -316,7 +334,7 @@ class NSFrozenLakeV1(Env):
         elif newletter == b'H':
             return -1.0
         else:
-            return 0.0
+            return self.R[s_p.index, t]
 
     def expected_reward(self, s, t, a):
         """
