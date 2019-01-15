@@ -64,7 +64,7 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
-class NSFrozenLakeV0(Env):
+class NSFrozenLakeV2(Env):
     """
     Winter is here. You and your friends were tossing around a frisbee at the park
     when you made a wild throw that left the frisbee out in the middle of the lake.
@@ -91,6 +91,8 @@ class NSFrozenLakeV0(Env):
     Non-Stationarity: when the transition function is stochastic , i.e. slippery ice,
     the probability of the resulting states from any action evolves randomly through
     time. The resulting transition function is L_p-Lipschitz.
+
+    The reward function is non-stationary: random reward received anywhere and evolving randomly.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
@@ -113,8 +115,10 @@ class NSFrozenLakeV0(Env):
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
         self.L_p = 1.0
-        self.L_r = 0.0
+        self.L_r = 0.1
+        self.rmax = 0.1 # Magnitude of the maximum reachable reward by a F cell
         self.T = self.generate_transition_matrix()
+        self.R = self.generate_instant_reward_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
         self._seed()
@@ -132,10 +136,11 @@ class NSFrozenLakeV0(Env):
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
         self.T = self.generate_transition_matrix()
+        self.R = self.generate_instant_reward_matrix()
         return self.state
 
     def display(self):
-        print('Displaying NSFrozenLakeEnv-v0')
+        print('Displaying NSFrozenLakeEnv-v2')
         print('map       :')
         print(self.desc)
         print('n states  :', self.nS)
@@ -219,6 +224,18 @@ class NSFrozenLakeV0(Env):
                 D[i,j] = self.distance(states[i], states[j])
                 D[j,i] = self.distance(states[i], states[j])
         return D
+
+    def generate_instant_reward_matrix(self):
+        R = np.zeros(shape=(self.nS, self.nT), dtype=float)
+        for i in range(self.nS):
+            R[i][0] = np.random.uniform(low=-self.rmax, high=self.rmax)
+            for j in range(1, self.nT):
+                R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)
+                if R[i][j] > self.rmax:
+                    R[i][j] = self.rmax
+                elif R[i][j] < -self.rmax:
+                    R[i][j] = -self.rmax
+        return R
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
@@ -317,7 +334,7 @@ class NSFrozenLakeV0(Env):
         elif newletter == b'H':
             return -1.0
         else:
-            return 0.0
+            return self.R[s_p.index, t]
 
     def expected_reward(self, s, t, a):
         """

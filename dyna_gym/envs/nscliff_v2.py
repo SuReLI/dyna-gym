@@ -42,10 +42,11 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
-class NSCliffV0(Env):
+class NSCliffV2(Env):
     """
     Non Stationary grid-world representing a cliff.
     The transition function is non-stationary and tries to push the agent towards the hole.
+    The reward function is non-stationary: random reward received anywhere and evolving randomly.
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
@@ -65,8 +66,10 @@ class NSCliffV0(Env):
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
         self.L_p = 1.0
-        self.L_r = 0.0
+        self.L_r = 0.1
+        self.rmax = 0.1 # Magnitude of the maximum reachable reward by a F cell
         self.T = self.generate_transition_matrix()
+        self.R = self.generate_instant_reward_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
         self._seed()
@@ -83,10 +86,11 @@ class NSCliffV0(Env):
         """
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
+        self.R = self.generate_instant_reward_matrix()
         return self.state
 
     def display(self):
-        print('Displaying NSCliff-v0')
+        print('Displaying NSCliff-v2')
         print('map       :')
         print(self.desc)
         print('n states  :', self.nS)
@@ -148,7 +152,6 @@ class NSCliffV0(Env):
             assert (type(s) == int), 'Error: input state has wrong type: type={}'.format(type(s))
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
-
         '''
         if self.is_slippery:
             for b in [(a-1)%4, a, (a+1)%4]:
@@ -176,6 +179,18 @@ class NSCliffV0(Env):
                 D[i,j] = self.distance(states[i], states[j])
                 D[j,i] = self.distance(states[i], states[j])
         return D
+
+    def generate_instant_reward_matrix(self):
+        R = np.zeros(shape=(self.nS, self.nT), dtype=float)
+        for i in range(self.nS):
+            R[i][0] = np.random.uniform(low=-self.rmax, high=self.rmax)
+            for j in range(1, self.nT):
+                R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)
+                if R[i][j] > self.rmax:
+                    R[i][j] = self.rmax
+                elif R[i][j] < -self.rmax:
+                    R[i][j] = -self.rmax
+        return R
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
@@ -280,7 +295,7 @@ class NSCliffV0(Env):
         elif newletter == b'H':
             return -1.0
         else:
-            return 0.0
+            return self.R[s_p.index, t]
 
     def expected_reward(self, s, t, a):
         """
