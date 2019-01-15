@@ -16,6 +16,11 @@ register(
 )
 
 register(
+    id='NSFrozenLake-v2',
+    entry_point='dyna_gym.envs:NSFrozenLakeV2',
+)
+
+register(
     id='NSCliff-v0',
     entry_point='dyna_gym.envs:NSCliffV0',
 )
@@ -26,6 +31,11 @@ register(
 )
 
 register(
+    id='NSCliff-v2',
+    entry_point='dyna_gym.envs:NSCliffV2',
+)
+
+register(
     id='NSBridge-v0',
     entry_point='dyna_gym.envs:NSBridgeV0',
 )
@@ -33,6 +43,11 @@ register(
 register(
     id='NSBridge-v1',
     entry_point='dyna_gym.envs:NSBridgeV1',
+)
+
+register(
+    id='NSBridge-v2',
+    entry_point='dyna_gym.envs:NSBridgeV2',
 )
 
 register(
