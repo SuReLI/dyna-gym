@@ -116,7 +116,8 @@ class NSFrozenLakeV2(Env):
         self.tau = 1 # timestep duration
         self.L_p = 1.0
         self.L_r = 0.1
-        self.rmax = 0.1 # Magnitude of the maximum reachable reward by a F cell
+        self.r_goal_max = 1.0
+        self.r_goal_min = 0.1
         self.T = self.generate_transition_matrix()
         self.R = self.generate_instant_reward_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
@@ -228,13 +229,17 @@ class NSFrozenLakeV2(Env):
     def generate_instant_reward_matrix(self):
         R = np.zeros(shape=(self.nS, self.nT), dtype=float)
         for i in range(self.nS):
-            R[i][0] = np.random.uniform(low=-self.rmax, high=self.rmax)
-            for j in range(1, self.nT):
-                R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)
-                if R[i][j] > self.rmax:
-                    R[i][j] = self.rmax
-                elif R[i][j] < -self.rmax:
-                    R[i][j] = -self.rmax
+            row, col = self.to_m(i)
+            letter = self.desc[row, col]
+            if letter == b'G':
+                print(i)
+                R[i][0] = np.random.uniform(low=-self.r_goal_max, high=self.r_goal_max)
+                for j in range(1, self.nT):
+                    R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)
+                    if R[i][j] > self.r_goal_max:
+                        R[i][j] = self.r_goal_max
+                    elif R[i][j] < self.r_goal_min:
+                        R[i][j] = self.r_goal_min
         return R
 
     def generate_transition_matrix(self):
@@ -330,11 +335,11 @@ class NSFrozenLakeV2(Env):
         newrow, newcol = self.to_m(s_p.index)
         newletter = self.desc[newrow, newcol]
         if newletter == b'G':
-            return +1.0
+            return self.R[s_p.index, t]
         elif newletter == b'H':
             return -1.0
         else:
-            return self.R[s_p.index, t]
+            return 0.0
 
     def expected_reward(self, s, t, a):
         """
