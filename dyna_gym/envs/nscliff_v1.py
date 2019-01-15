@@ -66,7 +66,9 @@ class NSCliffV1(Env):
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
         self.L_p = 1.0
-        self.L_r = 0.0
+        self.L_r = 0.1
+        self.rmax = 0.2 # Magnitude of the maximum reachable reward by a F cell
+        self.R = self.generate_instant_reward_matrix()
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
@@ -84,6 +86,7 @@ class NSCliffV1(Env):
         """
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
+        self.R = self.generate_instant_reward_matrix()
         return self.state
 
     def display(self):
@@ -176,6 +179,18 @@ class NSCliffV1(Env):
                 D[i,j] = self.distance(states[i], states[j])
                 D[j,i] = self.distance(states[i], states[j])
         return D
+
+    def generate_instant_reward_matrix(self):
+        R = np.zeros(shape=(self.nS, self.nT), dtype=float)
+        for i in range(self.nS):
+            R[i][0] = np.random.uniform(low=-self.rmax, high=self.rmax)
+            for j in range(1, self.nT):
+                R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)
+                if R[i][j] > self.rmax:
+                    R[i][j] = self.rmax
+                elif R[i][j] < -self.rmax:
+                    R[i][j] = -self.rmax
+        return R
 
     def generate_transition_matrix(self):
         T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
@@ -280,7 +295,7 @@ class NSCliffV1(Env):
         elif newletter == b'H':
             return -1.0
         else:
-            return self.R[s_p.index]
+            return self.R[s_p.index, t]
 
     def expected_reward(self, s, t, a):
         """
