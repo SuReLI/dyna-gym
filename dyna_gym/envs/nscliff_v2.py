@@ -187,7 +187,6 @@ class NSCliffV2(Env):
             row, col = self.to_m(i)
             letter = self.desc[row, col]
             if letter == b'G':
-                print(i)
                 R[i][0] = np.random.uniform(low=-self.r_goal_max, high=self.r_goal_max)
                 for j in range(1, self.nT):
                     R[i][j] = R[i][j-1] + np.random.uniform(low=-self.tau * self.L_r, high=self.tau * self.L_r)

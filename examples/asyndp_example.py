@@ -8,11 +8,13 @@ import dyna_gym.agents.asynchronous_dp as asyndp
 ### Parameters
 #env = gym.make('NSFrozenLake-v0')
 #env = gym.make('NSFrozenLake-v1')
+env = gym.make('NSFrozenLake-v2')
 #env = gym.make('NSCliff-v0')
 #env = gym.make('NSCliff-v1')
+#env = gym.make('NSCliff-v2')
 #env = gym.make('NSBridge-v0')
 #env = gym.make('NSBridge-v1')
-env = gym.make('NSBridge-v2')
+#env = gym.make('NSBridge-v2')
 
 #agent = ra.MyRandomAgent(env.action_space)
 agent = asyndp.AsynDP(env.action_space, gamma=0.9, max_depth=3, is_model_dynamic=False)
