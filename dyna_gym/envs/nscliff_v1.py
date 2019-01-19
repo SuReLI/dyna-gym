@@ -73,6 +73,7 @@ class NSCliffV1(Env):
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
         #self._seed()
+        self.np_random = np.random.RandomState()
         self.reset()
 
     def _seed(self, seed=None):
