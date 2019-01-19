@@ -94,7 +94,8 @@ def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_pr
     for _epi in range(n_epi):
         if verbose:
             print('Environment', env_name, _env+1, '/', n_env, 'agent', agt_name, _prm+1, '/', n_prm,'running episode', _epi+1, '/', n_epi, '(thread nb', _thr, ')')
-        np.random.seed(int(_thr * _epi * _env))
+        np.random.seed(int(_thr * _epi * _env * 314))
+        print('------------------------------>', int(_thr * _epi * _env * 314))
         env.reset()
         cumulative_reward, total_time, total_return = run(agt, env, tmax)
         if save:
