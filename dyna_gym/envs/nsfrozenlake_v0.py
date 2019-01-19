@@ -114,10 +114,10 @@ class NSFrozenLakeV0(Env):
         self.tau = 1 # timestep duration
         self.L_p = 1.0
         self.L_r = 0.0
-        self.T = self.generate_transition_matrix()
+        #self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel() # Initial state distribution
         self.isd = isd / isd.sum()
-        self._seed()
+        #self._seed()
         self.reset()
 
     def _seed(self, seed=None):

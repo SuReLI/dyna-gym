@@ -65,7 +65,7 @@ class NSBridgeV0(Env):
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
-        self._seed()
+        #self._seed()
         self.reset()
 
     def _seed(self, seed=None):

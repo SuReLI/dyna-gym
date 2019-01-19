@@ -65,10 +65,10 @@ class NSBridgeV2(Env):
         self.r_goal_max = 1.0
         self.r_goal_min = 0.1
         self.T = self.generate_transition_matrix()
-        self.R = self.generate_instant_reward_matrix()
+        #self.R = self.generate_instant_reward_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
-        self._seed()
+        #self._seed()
         self.reset()
 
     def _seed(self, seed=None):

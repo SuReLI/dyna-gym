@@ -69,10 +69,10 @@ class NSCliffV1(Env):
         self.L_r = 0.1
         self.rmax = 0.1 # Magnitude of the maximum reachable reward by a F cell
         self.T = self.generate_transition_matrix()
-        self.R = self.generate_instant_reward_matrix()
+        #self.R = self.generate_instant_reward_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
-        self._seed()
+        #self._seed()
         self.reset()
 
     def _seed(self, seed=None):
