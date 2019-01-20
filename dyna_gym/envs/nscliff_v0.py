@@ -17,7 +17,7 @@ MAPS = {
         "FFF",
         "SHG"
     ],
-    "cliff4x4":
+    "cliff4x4": [
         "FFFF",
         "FFFF",
         "FFFF",
