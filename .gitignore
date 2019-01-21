@@ -4,6 +4,7 @@ outdated
 log
 *.egg-info
 *.pyomo.lp
+dyna_gym/agents/test.py
 
 examples/uct_nativecartpole.py
 nsmdp-algorithms
