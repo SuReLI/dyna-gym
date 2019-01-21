@@ -8,7 +8,7 @@ agent = uct.UCT(
     action_space=env.action_space,
     rollouts=100,
     horizon=50,
-    is_model_dynamic=False
+    is_model_dynamic=True
 )
 
 ### Run
