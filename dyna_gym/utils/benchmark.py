@@ -89,7 +89,7 @@ def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_p
                     if save:
                         csv_write([env_name, _env, agt_name, _prm] + prm + [_epi, cumulative_reward, total_time, total_return], paths_pool[_agt], 'a')
 
-def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr, save, path, verbose):
+def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr, save, path, verbose, save_period):
     saving_pool = []
     for _epi in range(n_epi):
         if verbose:
@@ -99,7 +99,7 @@ def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_pr
         cumulative_reward, total_time, total_return = run(agt, env, tmax)
         if save:
             saving_pool.append([env_name, _env, agt_name, _prm] + prm + [_thr, cumulative_reward, total_time, total_return])
-            if len(saving_pool) == 8:
+            if len(saving_pool) == save_period:
                 for row in saving_pool:
                     csv_write(row, path, 'a')
                 saving_pool = []
@@ -107,7 +107,7 @@ def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_pr
         for row in saving_pool:
             csv_write(row, path, 'a')
 
-def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, n_thread, verbose=True):
+def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, n_thread, verbose=True, save_period=1):
     """
     Benchmark a single agent within an environment.
     Multithread method.
@@ -149,7 +149,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                     agt.display()
                 results_pool = []
                 for _thr in range(n_thread):
-                    results_pool.append(pool.apply_async(multi_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, save, paths_pool[_agt], verbose]))
+                    results_pool.append(pool.apply_async(multi_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, save, paths_pool[_agt], verbose, save_period]))
                 for result in results_pool:
                     result.get()
 
@@ -185,7 +185,8 @@ def test_multithread():
         save             = True,
         paths_pool       = paths_pool,
         n_thread         = n_thread,
-        verbose          = True
+        verbose          = True,
+        save_period      = 1
     )
 
 def test_singlethread():

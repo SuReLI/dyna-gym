@@ -6,7 +6,7 @@ import dyna_gym.agents.uct as uct
 env = gym.make('NSCartPole-v2')
 agent = uct.UCT(
     action_space=env.action_space,
-    rollouts=100,
+    rollouts=50,
     horizon=50,
     is_model_dynamic=True
 )
@@ -22,7 +22,7 @@ for ts in range(timeout):
         env.print_state()
     env.render()
     if ts+1 == timeout:
-        print("Successfully reached end of episode ({} timeout)".format(ts+1))
+        print("Successfully reached end of episode ({} timesteps)".format(ts+1))
     if done:
-        print("Episode finished after {} timeout".format(ts+1))
+        print("Episode finished after {} timesteps".format(ts+1))
         break
