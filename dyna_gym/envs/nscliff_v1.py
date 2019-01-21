@@ -65,7 +65,7 @@ class NSCliffV1(Env):
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 0.2
+        self.L_p = 1.0
         self.L_r = 0.1
         self.rmax = 0.1 # Magnitude of the maximum reachable reward by a F cell
         self.T = self.generate_transition_matrix()
