@@ -70,7 +70,7 @@ class NSBridgeV0(Env):
         self.np_random = np.random.RandomState()
         self.reset()
 
-    def set_epsilon(epsilon):
+    def set_epsilon(self, epsilon):
         self.epsilon = epsilon
         self.T = self.generate_transition_matrix()
 
