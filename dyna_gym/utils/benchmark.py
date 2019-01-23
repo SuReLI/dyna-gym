@@ -90,7 +90,7 @@ def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_p
                     if save:
                         csv_write([env_name, _env, agt_name, _prm] + prm + [_epi, undiscounted_return, total_time, discounted_return], paths_pool[_agt], 'a')
 
-def multithread_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr, seed, save, path, verbose, save_period):
+def multithread_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr, save, path, verbose, save_period):
     saving_pool = []
     for _epi in range(n_epi):
         if verbose:
@@ -98,7 +98,7 @@ def multithread_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm
         env.reset()
         undiscounted_return, total_time, discounted_return = run(agt, env, tmax)
         if save:
-            saving_pool.append([env_name, _env, agt_name, _prm] + prm + [_thr, seed, undiscounted_return, total_time, discounted_return])
+            saving_pool.append([env_name, _env, agt_name, _prm] + prm + [_thr, undiscounted_return, total_time, discounted_return])
             if len(saving_pool) == save_period:
                 for row in saving_pool:
                     csv_write(row, path, 'a')
@@ -131,7 +131,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
     if save:
         assert len(paths_pool) == n_agt
         for _agt in range(n_agt): # Init save files for each agent
-            csv_write(['env_name', 'env_number', 'agent_name', 'param_number'] + param_names_pool[_agt] + ['thread_number', 'seed', 'undiscounted_return', 'total_time', 'discounted_return'], paths_pool[_agt], 'w')
+            csv_write(['env_name', 'env_number', 'agent_name', 'param_number'] + param_names_pool[_agt] + ['thread_number', 'undiscounted_return', 'total_time', 'discounted_return'], paths_pool[_agt], 'w')
     for _env in range(n_env):
         env = gym.make(env_name)
         if verbose:
@@ -149,10 +149,7 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                     agt.display()
                 results_pool = []
                 for _thr in range(n_thread):
-                    seed = None#int(_thr * (_env+3) * 48)
-                    np.random.seed(None)
-                    #random.seed(seed)
-                    results_pool.append(pool.apply_async(multithread_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, seed, save, paths_pool[_agt], verbose, save_period]))
+                    results_pool.append(pool.apply_async(multithread_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, save, paths_pool[_agt], verbose, save_period]))
                 for result in results_pool:
                     result.get()
 

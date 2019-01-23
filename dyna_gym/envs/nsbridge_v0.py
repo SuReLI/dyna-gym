@@ -66,7 +66,7 @@ class NSBridgeV0(Env):
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
-        self._seed()
+        #self._seed()
         self.np_random = np.random.RandomState()
         self.reset()
 
@@ -83,6 +83,7 @@ class NSBridgeV0(Env):
         Reset the environment.
         IMPORTANT: Does not create a new environment.
         """
+        self.np_random = np.random.RandomState()
         self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
         self.lastaction = None # for rendering
         return self.state
