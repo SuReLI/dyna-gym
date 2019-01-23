@@ -149,9 +149,9 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                     agt.display()
                 results_pool = []
                 for _thr in range(n_thread):
-                    seed = int(_thr * (_env+3) * 48)
-                    np.random.seed(seed)
-                    random.seed(seed)
+                    seed = None#int(_thr * (_env+3) * 48)
+                    np.random.seed(None)
+                    #random.seed(seed)
                     results_pool.append(pool.apply_async(multithread_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, seed, save, paths_pool[_agt], verbose, save_period]))
                 for result in results_pool:
                     result.get()
