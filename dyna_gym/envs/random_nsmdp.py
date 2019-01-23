@@ -1,5 +1,5 @@
 """
-Non-Stationary Randomly generated MDP
+Randomly generated NSMDP
 """
 
 import logging
@@ -20,21 +20,28 @@ class State:
 
 class RandomNSMDP(Env):
     def __init__(self):
-        self.nS = 3 # n states
-        self.nTS = 3 # n terminal states
+        self.nS = 4 # n states
+        self.nTS = 1 # n terminal states TODO
+        self.minSBF = 1 # minimum state branching factor after taking an action
+        self.maxSBF = 3 # maximum state branching factor after taking an action
         self.nA = 2 # n actions
-        self.nT = 100 # n timesteps
+        self.nT = 10 # n timesteps
         self.pos_space = np.array(range(self.nS))
-        self.action_space = spaces.Discrete(self.nA)
+        #self.action_space = spaces.Discrete(self.nA)
+        self.Rmin = 0.0
+        self.Rmax = 1.0
 
-        self.timestep = 1 # timestep duration
-        self.L_p = 1 # transition kernel Lipschitz constant
-        self.L_r = 10 # reward function Lipschitz constant
+        self.epsilon = 1.0 # 0 = random; 1 = adversarial; in-between = mixture of both
+        self.L_p = 0.1 # transition kernel Lipschitz constant
+        self.L_r = 0.1 # reward function Lipschitz constant
+        self.tau = 1 # timestep duration
 
+        self.RS = self.generate_reachable_states()
+        self.TS = self.generate_terminal_states()
         self.T = self.generate_transition_matrix()
         self.R = self.generate_reward_matrix()
 
-        self._seed()
+        #self._seed()
         self.reset()
         self.viewer = None
 
@@ -46,16 +53,62 @@ class RandomNSMDP(Env):
         self.state = (0, 0)
         self.steps_beyond_done = None
 
+    def generate_terminal_states(self):
+        TS = np.zeros(shape=self.nS, dtype=int)
+        ts = np.random.randint(low=0, high=self.nS, size=self.nTS)
+        for s in ts:
+            TS[s] = 1
+        return TS
+
+    def generate_reachable_states(self):
+        RS = np.zeros(shape=(self.nS, self.nA, self.nS), dtype=int)
+        for i in range(self.nS):
+            for j in range(self.nA):
+                RS[i, j, (i+1)%self.nS] = 1
+                if self.maxSBF > 1:
+                    bf = np.random.randint(low=self.minSBF, high=self.maxSBF)
+                    rs = np.random.randint(low=0, high=self.nS, size=bf)
+                    for s in rs:
+                        RS[i, j, s] = 1
+        return RS
+
     def generate_transition_matrix(self):
-        T = np.zeros(shape=(self.nS, self.nA, self.nT, self.nS), dtype=float)
-        for i in range(self.nS): # s
-            for j in range(self.nA): # a
-                # 1. Generate distribution for t=0
-                T[i,j,0,:] = distribution.random_tabular(size=self.nS)
-                # 2. Build subsequent distributions st LC constraint is respected
-                for t in range(1, self.nT): # t
-                    T[i,j,t,:] = distribution.random_constrained(T[i,j,t-1,:], self.L_p * self.timestep)
+        """
+        Initialize the transition matrix.
+        When the step function is called, a new one is generated based on the previous one.
+        The behavior of the environment (adversarial or not) is set with the epsilon factor.
+        """
+        T = np.zeros(shape=(self.nS, self.nA, self.nS), dtype=float)
+        for i in range(self.nS):
+            for j in range(self.nA):
+                rs = self.RS[i, j, :]
+                nrs = sum(rs)
+                d = distribution.random_tabular(size=nrs)
+                index = 0
+                for k in range(self.nS):
+                    if rs[k] == 1:
+                        T[i,j,k] = d[index]
+                        index += 1
         return T
+
+    def generate_reward_matrix(self):
+        R = np.zeros(shape=(self.nS, self.nA, self.nS), dtype=float)
+        for i in range(self.nS):
+            for j in range(self.nA):
+                for k in range(self.nS):
+                    if self.TS[k] == 1:
+                        R[i, j, k] = self.Rmin
+                    else:
+                        R[i, j, k] = np.random.uniform(low=self.Rmin, high=self.Rmax)
+        return R
+        '''
+        #TODO
+        Questions:
+        - Catastrophic terminal states?
+        - Depth of the evolution?
+
+        Faire un pull
+        '''
 
     def transition_probability_distribution(self, s, t, a):
         return self.T[s.index, a, t]
@@ -63,22 +116,8 @@ class RandomNSMDP(Env):
     def transition_probability(self, s_p, s, t, a):
         return self.T[s.index, a, t, s_p.index]
 
-    def generate_reward_matrix(self):
-        R = np.zeros(shape=(self.nS, self.nA, self.nT), dtype=float)
-        for i in range(self.nS): # s
-            for j in range(self.nA): # a
-                # 1. Generate instant reward for t=0
-                R[i,j,0] = np.random.random(size=None)
-                # 2. Build subsequent instant rewards st LC constraint is respected
-                for t in range(1, self.nT): # t
-                    R[i,j,t] = R[i,j,t-1] + self.L_r * self.timestep * (2 * np.random.random(size=None) - 1)
-                    if R[i,j,t] > 1:
-                        R[i,j,t] = 1
-                    if R[i,j,t] < 0:
-                        R[i,j,t] = 0
-        return R
-
     def reward(self, s, t, a):
+        #TODO
         return self.R[s.index, a, t]
 
     def equality_operator(self, s1, s2):
@@ -94,18 +133,27 @@ class RandomNSMDP(Env):
         The boolean is_model_dynamic indicates whether the temporal transition is applied
         to the state vector or not.
         """
+        #TODO
         p_p, t = self.state
         reward = self.reward(p_p, t, action)
         transition_model = self.transition_probability_distribution(p_p, t, action)
         p_p = np.random.choice(self.pos_space, size=None, replace=False, p=transition_model)
         if is_model_dynamic:
-            t += self.timestep
+            t += self.tau
         state_p = (int(p_p), t)
         if t >= self.nT - 1: # Timeout
             done = True
         else:
             done = False
         return state_p, reward, done
+
+    def evolve(self):
+        """
+        Change the transition and reward matrices.
+        Evolutions are either random or adversarial given the epsilon factor.
+        """
+        #TODO
+        print('TODO')
 
     def step(self, action):
         """
@@ -114,13 +162,14 @@ class RandomNSMDP(Env):
         Return (observation, reward, termination criterion (boolean), informations)
         """
         self.state, reward, done = self.transition(self.state, action, True)
+        self.evolve()
         return (self.state, reward, done, {})
 
     def is_terminal(self, state):
         return False
 
     def print_state(self):
-        print('position: {}; t: {}'.format(self.state[0],self.state[1]))
+        print('s: {}; t: {}'.format(self.state[0],self.state[1]))
 
     def get_state_space_at_time(self, t):
         return [(x, t) for x in self.pos_space]

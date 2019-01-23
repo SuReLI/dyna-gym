@@ -46,7 +46,7 @@ def run(agent, env, tmax, verbose=False):
 
 def singlethread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, verbose=True):
     """
-    Benchmark a single agent within an environment.
+    Benchmark multiple agents within a single environment.
     Single thread method.
     env_name         : name of the generated environment
     n_env            : number of generated environment
@@ -109,7 +109,7 @@ def multi_run(env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_pr
 
 def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_pool, param_names_pool, n_epi, tmax, save, paths_pool, n_thread, verbose=True, save_period=1):
     """
-    Benchmark a single agent within an environment.
+    Benchmark multiple agents within a single environment.
     Multithread method.
     env_name         : name of the generated environment
     n_env            : number of generated environment
@@ -152,6 +152,9 @@ def multithread_benchmark(env_name, n_env, agent_name_pool, agent_pool, param_po
                     results_pool.append(pool.apply_async(multi_run,[env_name, _env, n_env, env, agt_name, _agt, n_agt, agt, _prm, n_prm, prm, tmax, n_epi, _thr+1, save, paths_pool[_agt], verbose, save_period]))
                 for result in results_pool:
                     result.get()
+
+#def multinode_benchmark():
+    #TODO
 
 def test_multithread():
     env_name = 'NSFrozenLakeEnv-v0'

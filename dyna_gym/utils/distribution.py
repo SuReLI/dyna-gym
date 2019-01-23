@@ -4,7 +4,6 @@ Helpful functions when dealing with distributions
 
 import numpy as np
 import dyna_gym.utils.utils as utils
-#from scipy.stats import wasserstein_distance
 from itertools import combinations
 from scipy.optimize import linprog
 from math import sqrt

@@ -56,18 +56,23 @@ class NSBridgeV0(Env):
 
         self.nS = nrow * ncol # n states
         self.nA = 4 # n actions
-        self.nT = 21 # n timesteps
+        self.nT = 10 # n timesteps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
         self.tau = 1 # timestep duration
-        self.L_p = 1.0
+        self.L_p = 0.8
         self.L_r = 0.0
+        self.epsilon = 0.0 # 0: left part of the bridge is slippery; 1: right part of the bridge is slippery; in between: mixture of both
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
         #self._seed()
         self.np_random = np.random.RandomState()
         self.reset()
+
+    def set_epsilon(epsilon):
+        self.epsilon = epsilon
+        self.T = self.generate_transition_matrix()
 
     def _seed(self, seed=None):
         self.np_random, seed = utils.seeding.np_random(seed)
@@ -178,7 +183,7 @@ class NSBridgeV0(Env):
                     #row, col = self.to_m(s)
                     row_p, col_p = self.inc(row, col, a)
                     s_p = self.to_s(row_p, col_p)
-                    T[s,a,0,s_p] += 1.0
+                    T[s,a,0,s_p] = 1.0
                     rs = self.reachable_states(s, a)
                     nrs = sum(rs)
                     if nrs == 1:
@@ -186,7 +191,10 @@ class NSBridgeV0(Env):
                     else:
                         w0 = np.array(T[s,a,0,:])
                         wsat = np.zeros(shape=w0.shape)
-                        wsat[s_p] = 0.1
+                        if col < 4: #left part
+                            wsat[s_p] = 0.1 * (1 - self.epsilon) + 0.9 * self.epsilon
+                        else: #right part
+                            wsat[s_p] = 0.9 * (1 - self.epsilon) + 0.1 * self.epsilon
                         wslip = (1 - wsat[s_p]) / float(nrs - 1)
                         for i in range(len(rs)):
                             if (rs[i] == 1) and (i != s_p):
