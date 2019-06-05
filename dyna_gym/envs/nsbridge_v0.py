@@ -6,10 +6,12 @@ from six import StringIO, b
 from gym import Env, spaces, utils
 from gym.envs.toy_text import discrete
 
+
 LEFT = 0
 DOWN = 1
 RIGHT = 2
 UP = 3
+
 
 MAPS = {
     "bridge": [
@@ -21,6 +23,7 @@ MAPS = {
     ]
 }
 
+
 class State:
     """
     State class
@@ -28,6 +31,7 @@ class State:
     def __init__(self, index, time):
         self.index = index
         self.time = time
+
 
 def categorical_sample(prob_n, np_random):
     """
@@ -38,10 +42,14 @@ def categorical_sample(prob_n, np_random):
     csprob_n = np.cumsum(prob_n)
     return (csprob_n > np_random.rand()).argmax()
 
+
 class NSBridgeV0(Env):
     """
     Non Stationary grid-world representing a bridge.
     As time goes by, it gets slippery.
+    self.epsilon = 0: left part of the bridge is slippery;
+    self.epsilon = 1: right part of the bridge is slippery;
+    self.epsilon = in between: mixture of both
     """
 
     metadata = {'render.modes': ['human', 'ansi']}
@@ -54,23 +62,24 @@ class NSBridgeV0(Env):
         self.desc = desc = np.asarray(desc, dtype='c')
         self.nrow, self.ncol = nrow, ncol = desc.shape
 
-        self.nS = nrow * ncol # n states
-        self.nA = 4 # n actions
-        self.nT = 10 # n timesteps
+        self.nS = nrow * ncol  # n states
+        self.nA = 4  # n actions
+        self.nT = 10  # n time-steps
         self.action_space = spaces.Discrete(self.nA)
         self.is_slippery = is_slippery
-        self.tau = 1 # timestep duration
-        self.L_p = 0.8
+        self.tau = 1  # time-step duration
+        self.L_p = 1.0
         self.L_r = 0.0
-        self.epsilon = 0.0 # 0: left part of the bridge is slippery; 1: right part of the bridge is slippery; in between: mixture of both
+        self.epsilon = 0.0
         self.T = self.generate_transition_matrix()
         isd = np.array(self.desc == b'S').astype('float64').ravel()
         self.isd = isd / isd.sum()
-        #self._seed()
+        # self._seed()
         self.np_random = np.random.RandomState()
         self.reset()
 
     def set_epsilon(self, epsilon):
+        print('Epsilon set to:', epsilon)
         self.epsilon = epsilon
         self.T = self.generate_transition_matrix()
 
@@ -84,8 +93,8 @@ class NSBridgeV0(Env):
         IMPORTANT: Does not create a new environment.
         """
         self.np_random = np.random.RandomState()
-        self.state = State(categorical_sample(self.isd, self.np_random), 0) # (index, time)
-        self.lastaction = None # for rendering
+        self.state = State(categorical_sample(self.isd, self.np_random), 0)  # (index, time)
+        self.last_action = None  # for rendering
         return self.state
 
     def display(self):
@@ -152,7 +161,8 @@ class NSBridgeV0(Env):
             row, col = self.to_m(s)
         rs = np.zeros(shape=self.nS, dtype=int)
         if self.is_slippery:
-            for b in [(a-1)%4, a, (a+1)%4]:
+            #for b in [(a-1)%4, a, (a+1)%4]:
+            for b in range(4):
                 newrow, newcol = self.inc(row, col, b)
                 rs[self.to_s(newrow, newcol)] = 1
         else:
@@ -196,10 +206,11 @@ class NSBridgeV0(Env):
                             wsat[s_p] = 0.1 * (1 - self.epsilon) + 0.9 * self.epsilon
                         else: #right part
                             wsat[s_p] = 0.9 * (1 - self.epsilon) + 0.1 * self.epsilon
-                        wslip = (1 - wsat[s_p]) / float(nrs - 1)
-                        for i in range(len(rs)):
-                            if (rs[i] == 1) and (i != s_p):
-                                wsat[i] = wslip
+                        wslip = (1 - wsat[s_p]) / 2
+                        s_up = self.to_s(row-1, col)
+                        s_dw = self.to_s(row+1, col)
+                        wsat[s_up] += wslip
+                        wsat[s_dw] += wslip
                         D = self.distances_matrix(range(self.nS))
                         l = self.tau * self.L_p / distribution.wass_dual(w0, wsat, D)
                         for t in range(1, self.nT):
@@ -307,7 +318,7 @@ class NSBridgeV0(Env):
     def step(self, a):
         s, r, done = self.transition(self.state, a, True)
         self.state = s
-        self.lastaction = a
+        self.last_action = a
         return (s, r, done, {})
 
     def render(self, mode='human', close=False):
@@ -319,8 +330,8 @@ class NSBridgeV0(Env):
         desc = self.desc.tolist()
         desc = [[c.decode('utf-8') for c in line] for line in desc]
         desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
-        if self.lastaction is not None:
-            outfile.write("  ({})\n".format(["Left","Down","Right","Up"][self.lastaction]))
+        if self.last_action is not None:
+            outfile.write("  ({})\n".format(["Left","Down","Right","Up"][self.last_action]))
         else:
             outfile.write("\n")
         outfile.write("\n".join(''.join(line) for line in desc)+"\n")

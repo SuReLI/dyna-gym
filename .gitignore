@@ -6,6 +6,9 @@ log
 *.pyomo.lp
 dyna_gym/agents/test.py
 
+.idea/
+
 examples/uct_nativecartpole.py
 nsmdp-algorithms
 nsmdp_algorithms
+
